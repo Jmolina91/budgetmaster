@@ -958,64 +958,40 @@
 // --- Session check: Validate active session ---
 // --- Session check: Validate active session ---
 firebase.auth().onAuthStateChanged(async (user) => {
-  if (user) {
-    const uid = user.uid;
+  if (!user) {
+    // Not logged in at all
+    window.location.href = 'login.html';
+    return;
+  }
 
-    async function migrateLocalStorageToFirestore(uid) {
-      const categories = JSON.parse(localStorage.getItem("categories") || "[]");
-      const transactionsLS = JSON.parse(localStorage.getItem("transactions") || "[]");
-      const accountsLS = JSON.parse(localStorage.getItem("accounts") || "[]");
-      const pool = Number(localStorage.getItem("pool") || 0);
-      const settings = JSON.parse(localStorage.getItem("settings") || "{}");
+  try {
+    const userDoc = await firebase.firestore().collection('users').doc(user.uid).get();
 
-      // Skip if nothing to migrate
-      if (
-        !categories.length &&
-        !transactionsLS.length &&
-        !accountsLS.length &&
-        pool === 0 &&
-        Object.keys(settings).length === 0
-      ) {
-        console.log("No localStorage data to migrate.");
-        return;
-      }
-
-      const payload = {
-        categories,
-        transactions: transactionsLS,
-        accounts: accountsLS,
-        pool,
-        settings,
-        migratedAt: firebase.firestore.FieldValue.serverTimestamp()
-      };
-
-      try {
-        await db.collection("users").doc(uid)
-          .collection("appData").doc("budgetData")
-          .set(payload, { merge: true });
-
-        console.log("✅ Migrated localStorage to Firestore.");
-
-        // Clear localStorage after successful migration
-        ["categories", "transactions", "accounts", "pool", "settings"].forEach(k => localStorage.removeItem(k));
-        console.log("🧹 Cleared migrated localStorage data.");
-        
-      } catch (err) {
-        console.error("❌ Migration failed:", err);
-      }
+    if (!userDoc.exists) {
+      // No user document found
+      await firebase.auth().signOut();
+      window.location.href = 'login.html';
+      return;
     }
 
-    // Run migration
-    await migrateLocalStorageToFirestore(uid);
+    const userData = userDoc.data();
 
-    console.log("🔑 User logged in:", user.email);
-  } else {
-    console.log("🚪 User signed out.");
+    if (!userData.sessionActive) {
+      // Session inactive
+      await firebase.auth().signOut();
+      window.location.href = 'login.html';
+      return;
+    }
+
+    // ✅ Session is active, user can see the page
+    console.log("Session valid. Welcome:", userData.fullName);
+
+  } catch (error) {
+    console.error("Session check failed:", error);
+    await firebase.auth().signOut();
+    window.location.href = 'login.html';
   }
 });
-
-
-
 
 
 
@@ -2092,31 +2068,25 @@ async function loadDataFromFirestore() {
 } // Ensure this is closed properly
 
 
-
- // Logout button handler
-  document.getElementById('logoutBtn').addEventListener('click', async () => {
-    try {
-      const user = firebase.auth().currentUser;
-      if (!user) {
-        alert("No user logged in.");
-        return;
-      }
+// Logout button handler
+document.getElementById('logoutBtn').addEventListener('click', async () => {
+  try {
+    const user = auth.currentUser; // use the same 'auth' instance
+    if (user) {
       const uid = user.uid;
-      // Update sessionActive field to false on Firestore user document
-      await firebase.firestore().collection('users').doc(uid).update({
+      // Update sessionActive field to false
+      await db.collection('users').doc(uid).update({
         sessionActive: false
       });
-      // Sign out the user
-      await firebase.auth().signOut();
-      // Redirect to login page
-      window.location.href = 'login.html';
-    } catch (error) {
-      alert("Logout failed: " + error.message);
     }
-  });
-
-
-
+    // Sign out (safe to call even if user is null)
+    await auth.signOut();
+    // Redirect to login
+    window.location.href = 'login.html';
+  } catch (error) {
+    alert("Logout failed: " + error.message);
+  }
+});
 
 
 
