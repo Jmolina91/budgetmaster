@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Login - BudgetMaster</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gradient-to-tr from-blue-100 via-white to-blue-200 min-h-screen flex items-center justify-center">
+
+  <div class="bg-white shadow-xl rounded-2xl p-10 w-full max-w-md transition duration-300 ease-in-out">
+    <div class="text-center mb-6">
+      <h1 class="text-3xl font-bold text-blue-600">BudgetMaster</h1>
+      <p class="text-gray-500">Sign in to your account</p>
+    </div>
+
+    <div class="space-y-4">
+      <input id="email" type="email" placeholder="Email" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 transition" />
+      <input id="password" type="password" placeholder="Password" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 transition" />
+
+      <button onclick="login()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg transition">
+        Log In
+      </button>
+    </div>
+
+    <p class="text-sm text-center text-gray-500 mt-6">
+      Don't have an account? 
+      <a href="sign up.html" class="text-blue-600 font-medium hover:underline">Create one</a>
+    </p>
+  </div>
+
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+  <script>
+    // Initialize Firebase compat
+    const firebaseConfig = {
+      apiKey: "AIzaSyC5Spnd6pFGrLAcNxsX6X0LMxSp3XojL8A",
+      authDomain: "budget-monitoring-99949.firebaseapp.com",
+      projectId: "budget-monitoring-99949",
+      storageBucket: "budget-monitoring-99949.appspot.com",
+      messagingSenderId: "290972976511",
+      appId: "1:290972976511:web:64c11ab518265572d1864a"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+
+ window.login = async function () {
+  const email = document.getElementById("email").value.trim();
+  const password = document.getElementById("password").value;
+
+  try {
+    const userCredential = await auth.signInWithEmailAndPassword(email, password);
+    const uid = userCredential.user.uid;
+
+    // Fetch user document
+    const userDoc = await db.collection("users").doc(uid).get();
+    if (!userDoc.exists) {
+      alert("User data not found in Firestore.");
+      await auth.signOut();
+      return;
+    }
+
+    const userData = userDoc.data();
+
+    if (userData.approvalStatus !== "Approved") {
+      alert("Your account is not approved yet. Please wait for admin approval.");
+      await auth.signOut();
+      return;
+    }
+
+    // Query all users with sessionActive = true
+    const activeUsersSnapshot = await db.collection("users")
+      .where("sessionActive", "==", true)
+      .get();
+
+    // Check if *any other* user besides current has sessionActive = true
+    const otherActiveUsers = activeUsersSnapshot.docs.filter(doc => doc.id !== uid);
+
+    console.log(`Active sessions found: ${activeUsersSnapshot.size}, Other active users: ${otherActiveUsers.length}`);
+
+    if (otherActiveUsers.length > 0) {
+      alert("Another user is currently logged in. Please try again later.");
+      await auth.signOut();
+      return;
+    }
+
+    // If current user is already active, just proceed
+    // Otherwise set sessionActive = true
+    if (!userData.sessionActive) {
+      await db.collection("users").doc(uid).update({ sessionActive: true });
+      console.log("Session set active for user:", uid);
+    } else {
+      console.log("User session already active, continuing login.");
+    }
+
+    alert("Login successful!");
+    window.location.href = "Home.html";
+
+  } catch (error) {
+    alert("Login failed: " + error.message);
+  }
+};
+
+
+  </script>
+
+</body>
+</html>
