@@ -503,9 +503,7 @@
   <div class="topbar">
     <div style="font-size:1.75rem;font-weight:600;">Your Budget</div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;">
-      <button class="btn btn-outline" id="add-item-btn">+ Add Budget Item</button>
-      <button class="btn btn-primary" id="add-transaction-btn">+ Add Transaction</button>
-      <button class="btn btn-success" id="add-income-btn">+ Add Income</button>
+     
     </div>
   </div>
 
@@ -542,71 +540,80 @@
   </div>
 
 
-        <!-- Budget Items -->
-        <div class="card">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-            <div style="font-weight:600;font-size:1.1rem;">Budget Items</div>
-            <div><span class="pill-small">Assign directly from pool</span></div>
-          </div>
-          <div class="budget-grid" id="items-container"></div>
-        </div>
+       <!-- Budget Items -->
+<div class="card">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+    <!-- Left Title -->
+    <div style="font-weight:600;font-size:1.1rem;">Budget Items</div>
 
-        <!-- Recent Transactions -->
-        <div class="card">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-            <div style="font-weight:600;font-size:1.1rem;">Recent Transactions</div>
-            <div><button class="btn btn-outline" id="view-all-transactions">View All</button></div>
-          </div>
-          <div id="transactions-list"></div>
-        </div>
-      </div>
+    <!-- Right Section: Buttons + Pill -->
+    <div style="display:flex;align-items:center;gap:10px;">
+      <button class="btn btn-outline" id="add-item-btn">+ Add Budget Item</button>
+      <button class="btn btn-primary" id="add-transaction-btn">+ Add Transaction</button>
+      <button class="btn btn-success" id="add-income-btn">+ Add Income</button>
+      <span class="pill-small">Assign directly from pool</span>
+    </div>
+  </div>
 
+  <!-- Budget Grid -->
+  <div class="budget-grid" id="items-container"></div>
+</div>
 
+<!-- Recent Transactions -->
+<div class="card">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+    <div style="font-weight:600;font-size:1.1rem;">Recent Transactions</div>
+    <div><button class="btn btn-outline" id="view-all-transactions">View All</button></div>
+  </div>
+  <div id="transactions-list"></div>
+</div>
+</div>
 
 <!-- Budgets Section -->
 <div class="section" data-section-id="budgets" style="display:none;">
   <div class="card">
     <!-- Header Section -->
-    <div class="topbar">
-      <h2>Manage Budget Categories</h2>
-      <div class="flex gap">
-        <select id="budget-month-selector" class="btn btn-outline">
-          <!-- JS populates months -->
+    <div class="topbar flex justify-between items-center">
+      <h2 class="text-xl font-semibold">Manage Budget Categories</h2>
+      <div class="flex items-center gap-3">
+        <select id="budget-month-selector" class="border rounded-lg px-3 py-2 bg-white shadow-sm hover:shadow-md transition">
+          <!-- Months will be dynamically populated -->
         </select>
         <button class="btn btn-primary" id="add-budget-category">+ New Category</button>
       </div>
     </div>
 
     <!-- Table Container -->
-    <div class="budget-table-container">
-      <table id="budgets-management" class="budget-table">
+    <div class="budget-table-container mt-4 overflow-x-auto">
+      <table id="budgets-management" class="budget-table w-full border-collapse">
         <thead>
-          <tr>
-            <th>Category</th>
-            <th>Assigned</th>
-            <th>Activity</th>
-            <th>Available</th>
-            <th style="text-align:center;">Actions</th>
+          <tr class="bg-gray-100 text-gray-700">
+            <th class="py-2 px-4 text-left">Category</th>
+            <th class="py-2 px-4 text-right">Assigned</th>
+            <th class="py-2 px-4 text-right">Activity</th>
+            <th class="py-2 px-4 text-right">Available</th>
+            <th class="py-2 px-4 text-right">Date Added</th>
+            <th class="py-2 px-4 text-center">Actions</th>
           </tr>
         </thead>
         <tbody id="budget-category-list">
           <!-- Example Row -->
-          <tr>
-            <td>Groceries</td>
-            <td class="amount">$500</td>
-            <td class="amount negative">- $120</td>
-            <td class="amount positive">$380</td>
-            <td class="actions">
+          <tr class="hover:bg-gray-50 transition">
+            <td class="py-2 px-4">Groceries</td>
+            <td class="amount text-right px-4">$500</td>
+            <td class="amount negative text-right px-4">- $120</td>
+            <td class="amount positive text-right px-4">$380</td>
+            <td class="actions text-center px-4">
               <button class="btn btn-outline small-btn">Edit</button>
               <button class="btn btn-danger small-btn">Delete</button>
             </td>
           </tr>
-          <tr>
-            <td>Rent</td>
-            <td class="amount">$1,200</td>
-            <td class="amount neutral">$0</td>
-            <td class="amount positive">$1,200</td>
-            <td class="actions">
+          <tr class="hover:bg-gray-50 transition">
+            <td class="py-2 px-4">Rent</td>
+            <td class="amount text-right px-4">$1,200</td>
+            <td class="amount neutral text-right px-4">$0</td>
+            <td class="amount positive text-right px-4">$1,200</td>
+            <td class="actions text-center px-4">
               <button class="btn btn-outline small-btn">Edit</button>
               <button class="btn btn-danger small-btn">Delete</button>
             </td>
@@ -616,7 +623,6 @@
     </div>
   </div>
 </div>
-
 
 
 
@@ -863,6 +869,71 @@
   </div>
 </div>
 
+<!-- Account Transaction Modal -->
+<div class="modal-backdrop" id="account-transaction-modal" style="display:none;">
+  <div class="modal">
+    <button class="close-btn" data-close>&times;</button>
+    <h2 style="margin-top:0;">Add Transaction</h2>
+
+    <div>
+      <label>Account</label>
+      <select id="accountSelect" class="input"></select>
+    </div>
+
+    <div style="margin-top:8px;">
+      <label>Date</label>
+      <input type="date" id="date" class="input">
+    </div>
+
+    <div style="margin-top:8px;">
+      <label>Payee / Source</label>
+      <input type="text" id="payee" class="input">
+    </div>
+
+    <div style="margin-top:8px;">
+      <label>Category</label>
+      <select id="category" class="input">
+        <option value="">Category</option>
+        <option value="Rent">Rent</option>
+        <option value="Groceries">Groceries</option>
+        <option value="Savings">Savings</option>
+        <option value="Entertainment">Entertainment</option>
+      </select>
+    </div>
+
+    <div style="margin-top:8px;">
+      <label>Amount</label>
+      <input type="number" id="amount" class="input">
+    </div>
+
+    <div style="margin-top:8px;">
+      <label>Type</label>
+      <select id="typeSelect" class="input">
+        <option value="income">Income / Deposit</option>
+        <option value="spend">Spending / Withdrawal</option>
+        <option value="transfer">Transfer Between Accounts</option>
+      </select>
+    </div>
+
+    <div style="margin-top:8px;">
+      <label>Transfer Target</label>
+      <select id="transferTarget" class="input"><option value="">Target Account</option></select>
+    </div>
+
+    <div style="margin-top:8px;">
+      <label>Memo</label>
+      <input type="text" id="memo" class="input">
+    </div>
+
+    <div style="margin-top:12px;text-align:right;">
+      <button class="btn" id="cancel-transaction">Cancel</button>
+      <button class="btn btn-primary" id="submit-transaction">Submit Transaction</button>
+    </div>
+
+    <div id="transactionError" class="error" style="margin-top:6px;"></div>
+  </div>
+</div>
+
 
 
 
@@ -933,7 +1004,8 @@
   </div>
 </template>
 
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script> 
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>  <!-- Added auth compat -->
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -955,53 +1027,66 @@
   const auth = firebase.auth();  // <-- Auth initialized here
   const db = firebase.firestore();
 
-// --- Session check: Validate active session ---
-// --- Session check: Validate active session ---
+
+
+
+
+
+
+
+
+
+
+
+
+
+// ===== Session Management =====
 firebase.auth().onAuthStateChanged(async (user) => {
   if (!user) {
-    // Not logged in at all
-    window.location.href = 'login.html';
+    window.location.href = "login.html";
     return;
   }
 
+  const uid = user.uid;
+  const userDocRef = firebase.firestore().collection("users").doc(uid);
+
   try {
-    const userDoc = await firebase.firestore().collection('users').doc(user.uid).get();
-
+    const userDoc = await userDocRef.get();
     if (!userDoc.exists) {
-      // No user document found
       await firebase.auth().signOut();
-      window.location.href = 'login.html';
+      window.location.href = "login.html";
       return;
     }
 
-    const userData = userDoc.data();
+    // --- Fetch budget for this user ---
+    const budgetDocRef = firebase.firestore().collection("budget").doc(uid);
+    const budgetSnap = await budgetDocRef.get();
 
-    if (!userData.sessionActive) {
-      // Session inactive
-      await firebase.auth().signOut();
-      window.location.href = 'login.html';
-      return;
+    if (budgetSnap.exists) {
+      const data = budgetSnap.data();
+
+      // Reset arrays
+      budgetItems.length = 0;
+      transactions.length = 0;
+      accounts.length = 0;
+
+      budgetItems.push(...(data.items || []));
+      transactions.push(...(data.transactions || []));
+      accounts.push(...(data.accounts || []));
+      budgetPool = data.pool || 0;
+
+      // Refresh UI
+      refreshBudgetItems();
+      refreshAccounts();
+      console.log("✅ Budget data loaded for user:", uid);
+    } else {
+      console.warn("📭 No budget found for user:", uid);
     }
 
-    // ✅ Session is active, user can see the page
-    console.log("Session valid. Welcome:", userData.fullName);
-
-  } catch (error) {
-    console.error("Session check failed:", error);
-    await firebase.auth().signOut();
-    window.location.href = 'login.html';
+  } catch (err) {
+    console.error("❌ Error loading budget:", err);
   }
 });
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -1012,6 +1097,16 @@ firebase.auth().onAuthStateChanged(async (user) => {
 
   let budgetPool = 0;
   let editingItemIndex = null;
+
+  let selectedMonth = "";
+
+
+
+
+
+
+
+
 
   // Global variables for currency
   let currencyCode = 'PHP';
@@ -1024,67 +1119,90 @@ firebase.auth().onAuthStateChanged(async (user) => {
     return (neg ? "-" : "") + currencySymbol + n.toFixed(2);
   };
 
-  function refreshSummary() {
-    let totalAssigned = 0;
-    let totalSpent = 0;
-    let totalOverspent = 0;
+ function refreshSummary() {
+  let totalAssigned = 0;
+  let totalSpent = 0;
+  let totalOverspent = 0;
 
-    budgetItems.forEach(item => {
-      const assigned = Number(item.assigned);
-      const spent = transactions
-        .filter(t => t.item === item.name)
-        .reduce((sum, t) => sum + Math.abs(t.amount), 0);
-      const available = assigned - spent;
-      const overspent = available < 0 ? Math.abs(available) : 0;
+  budgetItems.forEach(item => {
+    const assigned = Number(item.assigned) || 0;
+    const spent = transactions
+      .filter(t => t.item === item.name)
+      .reduce((sum, t) => sum + Math.abs(Number(t.amount)), 0);
+    const available = assigned - spent;
+    const overspent = available < 0 ? Math.abs(available) : 0;
 
-      totalAssigned += assigned;
-      totalSpent += spent;
-      totalOverspent += overspent;
-    });
+    totalAssigned += assigned;
+    totalSpent += spent;
+    totalOverspent += overspent;
+  });
 
-    const toBeBudgeted = budgetPool - totalAssigned;
-    const availableCash = budgetPool - totalSpent;
+  const budgetPoolNum = Number(budgetPool) || 0;
+  const toBeBudgeted = budgetPoolNum - totalAssigned;
+  const availableCash = budgetPoolNum - totalSpent;
 
-    document.getElementById('total-pool-display').textContent = fmt(budgetPool);
-    document.getElementById('available-cash-display').textContent = fmt(availableCash); // ✅ NEW
-    document.getElementById('total-assigned-display').textContent = fmt(totalAssigned);
-    document.getElementById('available-to-assign-display').textContent = fmt(toBeBudgeted);
-    document.getElementById('overspent-display').textContent = fmt(totalOverspent);
-  }
+  document.getElementById('total-pool-display').textContent = fmt(budgetPoolNum);
+  document.getElementById('available-cash-display').textContent = fmt(availableCash);
+  document.getElementById('total-assigned-display').textContent = fmt(totalAssigned);
+  document.getElementById('available-to-assign-display').textContent = fmt(toBeBudgeted);
+  document.getElementById('overspent-display').textContent = fmt(totalOverspent);
+}
+
   function refreshBudgetItems() {
-    const container = document.getElementById('items-container');
-    container.innerHTML = '';
-    budgetItems.forEach(item => {
-      const tpl = document.getElementById('item-template').content.cloneNode(true);
-      tpl.querySelector('[data-name]').textContent = item.name;
-      tpl.querySelector('[data-goal]').textContent = 'Assigned: ' + fmt(item.assigned);
-      const assigned = Number(item.assigned);
-      const spent = transactions.filter(t => t.item === item.name).reduce((s, t) => s + Number(t.amount), 0);
-      const available = assigned + spent;
-      tpl.querySelector('[data-assigned]').textContent = fmt(assigned);
-      tpl.querySelector('[data-spent]').textContent = fmt(Math.abs(spent));
-      tpl.querySelector('[data-available]').textContent = fmt(available);
-      const txContainer = tpl.querySelector('[data-transactions]');
-      const recent = transactions.filter(t => t.item === item.name).slice(-3).reverse();
-      recent.forEach(t => {
-        const div = document.createElement('div');
-        div.className = 'transaction';
-        div.innerHTML = `<div>${t.payee} <span class="small">(${t.date})</span></div><div>${fmt(t.amount)}</div>`;
-        txContainer.appendChild(div);
-      });
-      container.appendChild(tpl);
+  const container = document.getElementById('items-container');
+  container.innerHTML = '';
+
+  budgetItems.forEach(item => {
+    const tpl = document.getElementById('item-template').content.cloneNode(true);
+    tpl.querySelector('[data-name]').textContent = item.name;
+    tpl.querySelector('[data-goal]').textContent = 'Assigned: ' + fmt(item.assigned);
+
+    // Ensure assigned is a number
+    const assigned = Number(item.assigned) || 0;
+
+    // Calculate spent as absolute value of negative amounts
+    const spent = transactions
+      .filter(t => t.item === item.name)
+      .reduce((s, t) => s + Math.abs(Number(t.amount) || 0), 0);
+
+    // Available = assigned - spent
+    const available = assigned - spent;
+
+    tpl.querySelector('[data-assigned]').textContent = fmt(assigned);
+    tpl.querySelector('[data-spent]').textContent = fmt(spent);
+    tpl.querySelector('[data-available]').textContent = fmt(available);
+
+    // Render last 3 transactions for this item
+    const txContainer = tpl.querySelector('[data-transactions]');
+    txContainer.innerHTML = '';
+    const recent = transactions.filter(t => t.item === item.name).slice(-3).reverse();
+    recent.forEach(t => {
+      const div = document.createElement('div');
+      div.className = 'transaction';
+      div.innerHTML = `<div>${t.payee} <span class="small">(${t.date})</span></div><div>${fmt(t.amount)}</div>`;
+      txContainer.appendChild(div);
     });
-    refreshSummary();
-    refreshTransactionList();
-    refreshItemOptions();
-  }
 
+    container.appendChild(tpl);
+  });
 
+  // Refresh summary and other dependent elements
+  refreshSummary();
+  refreshTransactionList();
+  refreshItemOptions();
+}
+
+// ===== Refresh Budget Table =====
 function refreshBudgetManagementTable() {
   const list = document.getElementById('budget-category-list');
   list.innerHTML = '';
 
-  budgetItems.forEach((item, index) => {
+  let filtered = budgetItems;
+  if (selectedMonth) {
+    filtered = budgetItems.filter(i => i.date && i.date.startsWith(selectedMonth));
+  }
+
+  filtered.forEach((item, index) => {
     const assigned = Number(item.assigned);
     const spent = transactions
       .filter(t => t.item === item.name)
@@ -1092,88 +1210,71 @@ function refreshBudgetManagementTable() {
     const available = assigned - spent;
 
     const row = document.createElement('tr');
-
     row.innerHTML = `
       <td class="p-2">${item.name}</td>
       <td class="p-2 text-right">${fmt(assigned)}</td>
       <td class="p-2 text-right">${fmt(spent)}</td>
       <td class="p-2 text-right">${fmt(available)}</td>
+      <td class="p-2 text-right">${item.date ? new Date(item.date).toLocaleDateString() : ""}</td>
       <td class="p-2 text-center">
         <button class="btn btn-sm edit-btn" data-index="${index}">✏️</button>
         <button class="btn btn-sm delete-btn" data-index="${index}">🗑️</button>
       </td>
     `;
-
     list.appendChild(row);
   });
 
+  // Edit Buttons
+  document.querySelectorAll('.edit-btn').forEach(btn => {
+    btn.onclick = e => {
+      const i = e.target.dataset.index;
+      const item = budgetItems[i];
+      document.getElementById('new-item-name').value = item.name;
+      document.getElementById('new-item-amount').value = item.assigned;
+      document.getElementById('item-modal').style.display = 'flex';
+      editingItemIndex = i;
 
+      document.getElementById('save-new-item').onclick = () => {
+        const name = document.getElementById('new-item-name').value.trim();
+        const amount = parseFloat(document.getElementById('new-item-amount').value);
+        if (!name || isNaN(amount)) return;
 
+        // Update while preserving date
+        const oldItem = budgetItems[editingItemIndex];
+        budgetItems[editingItemIndex] = {
+          ...oldItem,
+          name,
+          assigned: amount,
+          date: oldItem.date || new Date().toISOString()
+        };
 
-
-
-
- document.querySelectorAll('.edit-btn').forEach(btn => {
-  btn.addEventListener('click', e => {
-    const i = e.target.getAttribute('data-index');
-    const item = budgetItems[i];
-    document.getElementById('new-item-name').value = item.name;
-    document.getElementById('new-item-amount').value = item.assigned;
-    document.getElementById('item-modal').style.display = 'flex';
-    
-    editingItemIndex = i;  // Set the index of the item being edited
-
-    document.getElementById('save-new-item').onclick = () => {
-      const name = document.getElementById('new-item-name').value.trim();
-      const amount = parseFloat(document.getElementById('new-item-amount').value);
-      if (!name || isNaN(amount)) return;
-
-      // Update the existing item
-      if (editingItemIndex !== null) {
-        budgetItems[editingItemIndex] = { name, assigned: amount };
         closeModals();
-        refreshBudgetItems();
         refreshBudgetManagementTable();
         saveDataToFirestore();
-        editingItemIndex = null; // Reset after editing
+        editingItemIndex = null;
+      };
+    };
+  });
+
+  // Delete Buttons
+  document.querySelectorAll('.delete-btn').forEach(btn => {
+    btn.onclick = e => {
+      const i = e.target.dataset.index;
+      const item = budgetItems[i];
+      if (confirm(`Are you sure you want to delete "${item.name}" and all related transactions?`)) {
+        // Remove item
+        budgetItems.splice(i, 1);
+
+        // Remove related transactions
+        transactions = transactions.filter(t => t.item !== item.name);
+
+        refreshBudgetManagementTable();
+        saveDataToFirestore();
       }
     };
   });
-});
-
-
-document.querySelectorAll('.delete-btn').forEach(btn => {
-  btn.addEventListener('click', e => {
-    const i = e.target.getAttribute('data-index');
-    const item = budgetItems[i]; // Get the item to be deleted
-
-    if (confirm(`Are you sure you want to delete "${item.name}" and all related transactions?`)) {
-      // 1. Remove the item from the array
-      budgetItems.splice(i, 1);
-
-      // 2. Remove related transactions
-      const originalLength = transactions.length;
-      for (let j = transactions.length - 1; j >= 0; j--) {
-        if (transactions[j].item === item.name) {
-          transactions.splice(j, 1);
-        }
-      }
-
-      console.log("✅ Item deleted from array:", item);
-      console.log("✅ Updated budgetItems array:", budgetItems);
-      console.log(`✅ Deleted ${originalLength - transactions.length} related transactions`);
-
-      // 3. Refresh UI
-      refreshBudgetItems();
-      refreshBudgetManagementTable();
-      refreshTransactionList(); // <-- Make sure this function exists
-
-      // 4. Save changes to Firestore
-      saveDataToFirestore();
-    }
-  });
-});
 }
+
 
 
 // Show income modal when button clicked
@@ -1249,10 +1350,10 @@ document.getElementById('save-income').addEventListener('click', (e) => {
 
 
 
-
-
-document.getElementById('add-budget-category').addEventListener('click', () => {
-  editingItemIndex = null;  // Reset to indicate that it's not an edit operation
+// --- Add / Edit Category ---
+// ===== Add New Budget Category =====
+document.getElementById('add-budget-category').onclick = () => {
+  editingItemIndex = null;
   document.getElementById('new-item-name').value = '';
   document.getElementById('new-item-amount').value = '';
   document.getElementById('item-warning').style.display = 'none';
@@ -1261,6 +1362,8 @@ document.getElementById('add-budget-category').addEventListener('click', () => {
   document.getElementById('save-new-item').onclick = () => {
     const name = document.getElementById('new-item-name').value.trim();
     const amount = parseFloat(document.getElementById('new-item-amount').value);
+    if (!name || isNaN(amount)) return;
+
     const totalAssigned = budgetItems.reduce((s, i) => s + Number(i.assigned), 0);
     if (totalAssigned + amount > budgetPool) {
       document.getElementById('item-warning').textContent = "Assigned amount exceeds available pool.";
@@ -1268,17 +1371,17 @@ document.getElementById('add-budget-category').addEventListener('click', () => {
       return;
     }
 
-    // Add new item if it's not an edit
-    if (editingItemIndex === null) {
-      budgetItems.push({ name, assigned: amount });
-    }
-    
+    budgetItems.push({
+      name,
+      assigned: amount,
+      date: new Date().toISOString()
+    });
+
     closeModals();
-    refreshBudgetItems();
     refreshBudgetManagementTable();
     saveDataToFirestore();
   };
-});
+};
 
 
 
@@ -1314,12 +1417,72 @@ async function updateToBeBudgeted(monthKey) {
 
 
 
+function renderBudgetItems(sortBy = "date", direction = "desc") {
+  const tbody = document.getElementById("budget-items");
+  tbody.innerHTML = "";
+
+  // Filter by selected month
+  let filtered = budgetItems;
+  if (selectedMonth) {
+    filtered = budgetItems.filter(i => i.date && i.date.startsWith(selectedMonth));
+  }
+
+  // Sort
+  let sorted = [...filtered];
+  if (sortBy === "date") {
+    sorted.sort((a, b) => new Date(a.date || 0) - new Date(b.date || 0));
+    if (direction === "desc") sorted.reverse();
+  } else if (sortBy === "name") {
+    sorted.sort((a, b) => a.name.localeCompare(b.name));
+    if (direction === "desc") sorted.reverse();
+  } else if (sortBy === "assigned") {
+    sorted.sort((a, b) => a.assigned - b.assigned);
+    if (direction === "desc") sorted.reverse();
+  }
+
+  // Render rows
+  sorted.forEach(item => {
+    const assigned = Number(item.assigned) || 0;
+    const spent = transactions
+      .filter(t => t.item === item.name)
+      .reduce((sum, t) => sum + Math.abs(t.amount), 0);
+    const available = assigned - spent;
+
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td class="p-2">${item.name}</td>
+      <td class="p-2 text-right">${fmt(assigned)}</td>
+      <td class="p-2 text-right">${fmt(spent)}</td>
+      <td class="p-2 text-right">${fmt(available)}</td>
+      <td class="p-2 text-right">${item.date ? new Date(item.date).toLocaleDateString() : ""}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  updateSummary(filtered);
+}
+// ===== Summary Update =====
+function updateSummary() {
+  const filteredItems = selectedMonth
+    ? budgetItems.filter(i => i.date && i.date.startsWith(selectedMonth))
+    : budgetItems;
+
+  const assigned = filteredItems.reduce((sum, i) => sum + i.assigned, 0);
+  const spent = transactions.reduce((sum, t) => sum + Math.abs(t.amount), 0);
+  const available = budgetPool - assigned;
+  const overspent = available < 0 ? Math.abs(available) : 0;
+
+  document.getElementById("summary-pool").textContent = fmt(budgetPool);
+  document.getElementById("summary-assigned").textContent = fmt(assigned);
+  document.getElementById("summary-available").textContent = fmt(available >= 0 ? available : 0);
+  document.getElementById("summary-overspent").textContent = fmt(overspent);
+}
 
 
-
+// ===== Month Selector =====
 function populateBudgetMonthSelector() {
   const monthSelector = document.getElementById("budget-month-selector");
-  if (!monthSelector) return;
+  monthSelector.innerHTML = "";
 
   const now = new Date();
   const currentMonth = now.getMonth();
@@ -1328,34 +1491,82 @@ function populateBudgetMonthSelector() {
   for (let i = -3; i <= 3; i++) {
     const date = new Date(currentYear, currentMonth + i);
     const monthYear = date.toLocaleString("default", { month: "long", year: "numeric" });
-
     const option = document.createElement("option");
-    option.value = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`; // e.g. "2025-08"
+    option.value = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
     option.textContent = monthYear;
-
     monthSelector.appendChild(option);
   }
 
-  monthSelector.value = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`;
+  selectedMonth = `${currentYear}-${String(currentMonth + 1).padStart(2, "0")}`;
+  monthSelector.value = selectedMonth;
+
+  monthSelector.onchange = e => {
+    selectedMonth = e.target.value;
+    refreshBudgetManagementTable();
+  };
 }
 
 
 
+// ----- Refresh Overview Recent Transactions -----
+function refreshTransactionList() {
+  const list = document.getElementById('transactions-list');
+  list.innerHTML = '';
+
+  // 1️⃣ Gather all account transactions
+  const allAccountTx = accounts.flatMap(acc =>
+    (acc.transactions || []).map(t => ({ ...t, account: acc.name }))
+  );
+
+  // 2️⃣ Combine global budget transactions and account transactions
+  const combined = [...transactions, ...allAccountTx];
+
+  // 3️⃣ Prepare map to merge transfers and avoid duplicates
+  const txMap = new Map();
+
+  combined.forEach(tx => {
+    // Special formatting for account-to-account transfers
+    if (tx.type === 'transfer-out') {
+      const key = `${tx.date}|${tx.amount}|${tx.memo}`; // memo contains "To TARGET_ACCOUNT"
+      txMap.set(key, {
+        date: tx.date,
+        type: 'Transfer',
+        amount: tx.amount,
+        from: tx.account,
+        to: tx.memo.replace('To ', ''),
+        payee: tx.payee || '',
+        category: 'Transfer',
+        memo: tx.memo
+      });
+    } else if (tx.type !== 'transfer-in') {
+      const key = `${tx.date}|${tx.account}|${tx.amount}|${tx.type}|${tx.payee || ''}`;
+      txMap.set(key, { ...tx });
+    }
+  });
+
+  // 4️⃣ Convert map to array and sort by date descending
+  const sorted = Array.from(txMap.values()).sort((a, b) => new Date(b.date) - new Date(a.date));
+
+  // 5️⃣ Render latest 6 transactions
+  sorted.slice(0, 6).forEach(t => {
+    const div = document.createElement('div');
+    div.className = 'transaction';
+
+    if (t.type === 'Transfer') {
+      div.innerHTML = `<div><strong>Transfer</strong> <span class="small">${t.date} • ${t.from} → ${t.to}</span></div><div>${fmt(t.amount)}</div>`;
+    } else if (t.account) {
+      // Account transaction
+      div.innerHTML = `<div><strong>${t.payee || t.memo || ''}</strong> <span class="small">${t.category || 'Uncategorized'} • ${t.date} • ${t.account}</span></div><div>${fmt(t.amount)}</div>`;
+    } else {
+      // Budget transaction
+      div.innerHTML = `<div><strong>${t.payee}</strong> <span class="small">${t.item || 'Uncategorized'} • ${t.date}</span></div><div>${fmt(t.amount)}</div>`;
+    }
+
+    list.appendChild(div);
+  });
+}
 
 
-
-
-  function refreshTransactionList() {
-    const list = document.getElementById('transactions-list');
-    list.innerHTML = '';
-    const sorted = [...transactions].sort((a, b) => new Date(b.date) - new Date(a.date));
-    sorted.slice(0, 6).forEach(t => {
-      const div = document.createElement('div');
-      div.className = 'transaction';
-      div.innerHTML = `<div><strong>${t.payee}</strong> <span class="small">${t.item} • ${t.date}</span></div><div>${fmt(t.amount)}</div>`;
-      list.appendChild(div);
-    });
-  }
 
   function refreshItemOptions() {
     const sel = document.getElementById('tx-item');
@@ -1395,8 +1606,6 @@ function saveDataToFirestore() {
     console.error("❌ Error saving data:", err);
   });
 }
-
-
 
   // --- Events ---
   document.getElementById('add-item-btn').addEventListener('click', () => {
@@ -1489,7 +1698,7 @@ function saveDataToFirestore() {
 
 
 
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
   // Set initial active section (default to 'overview')
   const initialSection = 'overview'; // Change to 'budgets' if you want Budgets section to be active by default
   const initialButton = document.querySelector(`[data-section="${initialSection}"]`);
@@ -1502,49 +1711,39 @@ document.addEventListener("DOMContentLoaded", () => {
   // Hide all sections and show the default one (overview or budgets)
   document.querySelectorAll('.section').forEach(sec => {
     const sectionId = sec.getAttribute('data-section-id');
-    if (sectionId === initialSection) {
-      sec.style.display = 'block'; // Show the default section (Overview or Budgets)
-    } else {
-      sec.style.display = 'none'; // Hide other sections
-    }
+    sec.style.display = (sectionId === initialSection) ? 'block' : 'none';
   });
 
-  // Populate both month selectors
+  // ✅ Populate both month selectors
   populateBudgetMonthSelector();
-  populateReportMonthSelector();
+  await populateReportMonthSelector(); // <-- you were missing this!
 
-  // Reports Section: Select current month and load report
+  // ✅ Reports Section: Select current month and load report
   const reportSelector = document.getElementById("report-month-selector");
   if (reportSelector && reportSelector.options.length > 0) {
-    reportSelector.selectedIndex = 0;
-    const selectedMonth = reportSelector.value;
-    renderSpendingReport(selectedMonth); // This will render the report
+    const selectedMonth = reportSelector.value; // already set by populateReportMonthSelector
+    renderSpendingReport(selectedMonth);
+    loadReportTable(selectedMonth);
   }
 
-  // Handle sidebar button clicks
+  // ✅ Handle sidebar button clicks
   document.querySelectorAll('.nav button').forEach(btn => {
     btn.addEventListener('click', () => {
       const sectionId = btn.getAttribute('data-section');
-      console.log(`Clicked button with section: ${sectionId}`); // Debugging clicked button
+      console.log(`Clicked button with section: ${sectionId}`);
 
       // Remove 'active' class from all buttons
       document.querySelectorAll('.nav button').forEach(b => b.classList.remove('active'));
-      // Add 'active' class to clicked button
       btn.classList.add('active');
 
-      // Hide all sections, then show the one that matches the clicked sectionId
+      // Toggle sections
       document.querySelectorAll('.section').forEach(sec => {
-        const secId = sec.getAttribute('data-section-id');
-        if (secId === sectionId) {
-          sec.style.display = 'block'; // Show the selected section
-        } else {
-          sec.style.display = 'none'; // Hide the other sections
-        }
+        sec.style.display = (sec.getAttribute('data-section-id') === sectionId) ? 'block' : 'none';
       });
 
       // Special handling for budgets section
       if (sectionId === 'budgets') {
-        refreshBudgetManagementTable(); // Ensure this function is correctly defined
+        refreshBudgetManagementTable();
       }
     });
   });
@@ -1553,39 +1752,29 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
 
-
-
-
-
-
-
 // === BUDGETS ===
 
-document.getElementById("budget-month-selector").addEventListener("change", (e) => {
-  const monthKey = e.target.value; // e.g., "2025-08"
-  updateToBeBudgeted(monthKey);
-  loadBudgetItems(monthKey); // Optional: Load the budget table for this month
+document.getElementById("budget-month-selector").addEventListener("change", e => {
+  selectedMonth = e.target.value;
+  refreshBudgetManagementTable();
 });
 
 
 
 
-
-
-
-// === ACCOUNTS ===
-
+// --- ACCOUNTS ---
+// Open Add Account Modal
 document.getElementById('add-account').addEventListener('click', () => {
   document.getElementById('account-name').value = '';
   document.getElementById('account-balance').value = '';
   document.getElementById('account-modal').style.display = 'flex';
 });
 
-document.getElementById('cancel-account').addEventListener('click', () => {
-  document.getElementById('account-modal').style.display = 'none';
-});
+// Cancel Add Account
+document.getElementById('cancel-account').addEventListener('click', closeModals);
+document.querySelector('#account-modal .close-btn').addEventListener('click', closeModals);
 
-
+// Save Account
 document.getElementById('save-account').addEventListener('click', () => {
   const nameInput = document.getElementById('account-name');
   const balanceInput = document.getElementById('account-balance');
@@ -1593,49 +1782,175 @@ document.getElementById('save-account').addEventListener('click', () => {
   const balance = parseFloat(balanceInput.value.trim());
 
   let valid = true;
-
-  // Hide all warnings first
   document.getElementById('account-name-warning').style.display = 'none';
   document.getElementById('account-balance-warning').style.display = 'none';
 
-  // Validate name
-  if (!name) {
-    document.getElementById('account-name-warning').style.display = 'block';
-    valid = false;
-  }
+  if (!name) { document.getElementById('account-name-warning').style.display='block'; valid=false; }
+  if (isNaN(balance)) { document.getElementById('account-balance-warning').style.display='block'; valid=false; }
+  if (accounts.some(a => a.name === name)) { alert('Account already exists'); valid=false; }
 
-  // Validate balance
-  if (isNaN(balance)) {
-    document.getElementById('account-balance-warning').style.display = 'block';
-    valid = false;
-  }
+  if(!valid) return;
 
-  if (!valid) return;
-
-  // Add to accounts and update UI
-  accounts.push({ name, balance });
+  accounts.push({ name, balance, transactions: [] });
   closeModals();
   refreshAccounts();
   saveDataToFirestore();
-
-  // Clear input fields
-  nameInput.value = '';
-  balanceInput.value = '';
 });
 
-
-document.getElementById('cancel-account').addEventListener('click', closeModals);
-
+// ----- Refresh Accounts -----
 function refreshAccounts() {
   const container = document.getElementById('accounts-list');
+  const accountSelect = document.getElementById('accountSelect');
+  const transferTarget = document.getElementById('transferTarget');
   container.innerHTML = '';
+  if(accountSelect) accountSelect.innerHTML = '<option value="">Select Account</option>';
+  if(transferTarget) transferTarget.innerHTML = '<option value="">Target Account (for transfer)</option>';
+
   accounts.forEach(acc => {
     const div = document.createElement('div');
     div.className = 'card';
     div.innerHTML = `<strong>${acc.name}</strong><br/>Balance: ${fmt(acc.balance)}`;
+    div.style.cursor = 'pointer';
+
+    // Click to open Transaction Form modal for this account
+    div.addEventListener('click', () => openTransactionForm(acc.name));
     container.appendChild(div);
+
+    // Populate dropdowns
+    if(accountSelect){
+      const opt1 = document.createElement('option'); opt1.value = acc.name; opt1.textContent = acc.name;
+      accountSelect.appendChild(opt1);
+    }
+    if(transferTarget){
+      const opt2 = document.createElement('option'); opt2.value = acc.name; opt2.textContent = acc.name;
+      transferTarget.appendChild(opt2);
+    }
+  });
+
+  // Update total balance
+  if(document.getElementById('totalBalance')){
+    const total = accounts.reduce((sum,a)=>sum+a.balance,0);
+    document.getElementById('totalBalance').textContent = total.toFixed(2);
+  }
+
+  // Refresh Overview transactions
+  refreshTransactionList();
+}
+
+// ----- Open Transaction Modal for a specific account -----
+function openTransactionForm(accountName){
+  const modal = document.getElementById('account-transaction-modal');
+  modal.style.display = 'flex';
+
+  const accountSelect = document.getElementById('accountSelect');
+  if(accountSelect){
+    accountSelect.innerHTML = '<option value="">Select Account</option>';
+    accounts.forEach(acc=>{
+      const opt = document.createElement('option');
+      opt.value = acc.name; opt.textContent = acc.name;
+      accountSelect.appendChild(opt);
+    });
+    accountSelect.value = accountName;
+  }
+
+  const transferTarget = document.getElementById('transferTarget');
+  if(transferTarget){
+    transferTarget.innerHTML = '<option value="">Target Account</option>';
+    accounts.forEach(acc=>{
+      const opt = document.createElement('option');
+      opt.value = acc.name; opt.textContent = acc.name;
+      transferTarget.appendChild(opt);
+    });
+  }
+
+  // Prefill date with today
+  const dateInput = document.getElementById('date');
+  if(dateInput) dateInput.value = new Date().toISOString().slice(0,10);
+}
+
+// Close Transaction Modal
+document.getElementById('cancel-transaction').addEventListener('click', closeTransactionModal);
+document.querySelector('#account-transaction-modal .close-btn').addEventListener('click', closeTransactionModal);
+
+function closeTransactionModal(){
+  const modal = document.getElementById('account-transaction-modal');
+  modal.style.display = 'none';
+  document.getElementById('transactionError').textContent = '';
+  // Clear fields
+  ['accountSelect','date','payee','category','amount','typeSelect','transferTarget','memo'].forEach(id=>{
+    const el = document.getElementById(id);
+    if(el) el.value = '';
   });
 }
+
+// ----- Transaction Submission -----
+document.getElementById('submit-transaction').addEventListener('click', () => {
+  const accountName = document.getElementById('accountSelect').value;
+  const date = document.getElementById('date').value || new Date().toISOString().slice(0,10);
+  const payee = document.getElementById('payee').value.trim();
+  let category = document.getElementById('category').value;
+  const amount = parseFloat(document.getElementById('amount').value);
+  const type = document.getElementById('typeSelect').value;
+  const target = document.getElementById('transferTarget').value;
+  const memo = document.getElementById('memo').value.trim();
+  const errorDiv = document.getElementById('transactionError');
+  errorDiv.textContent = '';
+
+  if(!accountName){ errorDiv.textContent='Select an account.'; return; }
+  if(isNaN(amount) || amount <= 0){ errorDiv.textContent='Enter valid amount.'; return; }
+  if(type==='transfer' && (!target || target===accountName)){ errorDiv.textContent='Select valid target account.'; return; }
+
+  const account = accounts.find(a => a.name === accountName);
+  if(!account){ errorDiv.textContent='Account not found.'; return; }
+  if(!account.transactions) account.transactions = [];
+
+  // For transfers, category is always 'Transfer'
+  if(type==='transfer'){
+    category = 'Transfer';
+  } else if(!category){
+    category = 'Uncategorized'; // default if user didn't select a category
+  }
+
+  if(type==='income'){
+    account.balance += amount;
+    account.transactions.push({date,type,amount,payee,category,memo});
+  } else if(type==='spend'){
+    account.balance -= amount;
+    account.transactions.push({date,type,amount,payee,category,memo});
+  } else if(type==='transfer'){
+    const targetAcc = accounts.find(a => a.name === target);
+    if(!targetAcc){ errorDiv.textContent='Target account not found.'; return; }
+    if(!targetAcc.transactions) targetAcc.transactions = [];
+
+    account.balance -= amount;
+    targetAcc.balance += amount;
+
+    // Add transactions with correct payee & category
+    account.transactions.push({
+      date,
+      type:'transfer-out',
+      amount,
+      payee: target,       // target account
+      category: 'Transfer',
+      memo: memo || 'To '+target
+    });
+
+    targetAcc.transactions.push({
+      date,
+      type:'transfer-in',
+      amount,
+      payee: accountName,  // source account
+      category: 'Transfer',
+      memo: memo || 'From '+accountName
+    });
+  }
+
+  // Refresh UI and save
+  refreshAccounts();
+  saveDataToFirestore();
+  closeTransactionModal();
+});
+
 
 
 
@@ -1838,11 +2153,38 @@ function loadReportTable(monthKey) {
 
   tableBody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Loading...</td></tr>';
 
-  let filtered;
-  if (monthKey === "All") {
-    filtered = [...transactions];
-  } else {
-    filtered = transactions.filter(tx => tx.date.slice(0, 7) === monthKey);
+  // Collect transactions from both global and account-based
+  const accountTransactions = accounts.flatMap(acc =>
+    (acc.transactions || []).map(t => ({ ...t, account: acc.name }))
+  );
+  const allTransactions = [...transactions, ...accountTransactions];
+
+  // Combine transfer-out and transfer-in into one "Transfer" entry
+  const txMap = new Map();
+  allTransactions.forEach(tx => {
+    if (tx.type === 'transfer-out') {
+      // Use date + amount + memo (To TARGET_ACCOUNT) as key
+      const key = `${tx.date}|${tx.amount}|${tx.memo}`;
+      txMap.set(key, {
+        date: tx.date,
+        item: 'Transfer',
+        payee: tx.payee || '',
+        amount: tx.amount,
+        type: 'transfer',
+        from: tx.account,
+        to: tx.memo.replace('To ', '')
+      });
+    } else if (tx.type !== 'transfer-in') {
+      // Use date + account + amount + type + payee as key for normal tx
+      const key = `${tx.date}|${tx.account}|${tx.amount}|${tx.type}|${tx.payee || ''}`;
+      txMap.set(key, { ...tx });
+    }
+  });
+
+  // Convert map to array and filter by month
+  let filtered = Array.from(txMap.values());
+  if (monthKey !== "All") {
+    filtered = filtered.filter(tx => tx.date.slice(0, 7) === monthKey);
   }
 
   if (!filtered.length) {
@@ -1850,47 +2192,62 @@ function loadReportTable(monthKey) {
     return;
   }
 
-  tableBody.innerHTML = filtered.map(tx => `
-    <tr>
-      <td>${tx.date}</td>
-      <td>${tx.item || 'Uncategorized'}</td>
-      <td>${tx.payee || ''}</td>
-     <td class="${tx.amount < 0 ? 'negative' : 'positive'}">${Math.abs(tx.amount).toLocaleString()}</td>
-
-      <td>${tx.amount < 0 ? 'Expense' : 'Income'}</td>
-    </tr>
-  `).join('');
+  // Render report rows
+  tableBody.innerHTML = filtered.map(tx => {
+    if (tx.type === 'transfer') {
+      return `
+        <tr>
+          <td>${tx.date}</td>
+          <td>Transfer</td>
+          <td>${tx.from} → ${tx.to}</td>
+          <td class="positive">${Math.abs(tx.amount).toLocaleString()}</td>
+          <td>Transfer</td>
+        </tr>
+      `;
+    } else {
+      return `
+        <tr>
+          <td>${tx.date}</td>
+          <td>${tx.item || tx.category || 'Uncategorized'}</td>
+          <td>${tx.payee || ''}</td>
+          <td class="${tx.type === 'spend' ? 'negative' : 'positive'}">${Math.abs(tx.amount).toLocaleString()}</td>
+          <td>${tx.type === 'income' ? 'Income' : 'Expense'}</td>
+        </tr>
+      `;
+    }
+  }).join('');
 }
 
 
 // === Firestore Fetch ===
-function fetchTransactions() {
+async function fetchTransactions() {
   return new Promise((resolve, reject) => {
-    auth.onAuthStateChanged(async (user) => {
-      if (user) {
-        const userId = user.uid;
-
-        try {
-          const docRef = db.collection("budget").doc(userId);
-          const docSnap = await docRef.get();
-
-          if (docSnap.exists) {
-            resolve(docSnap.data().transactions || []);
-          } else {
-            console.warn("No transactions found for this user.");
-            resolve([]);
-          }
-        } catch (error) {
-          console.error("Error fetching transactions:", error);
-          reject(error);
-        }
-      } else {
-        console.warn("User not logged in.");
+    firebase.auth().onAuthStateChanged(async (user) => {
+      if (!user) {
+        console.warn("⚠️ User not logged in.");
         resolve([]);
+        return;
+      }
+
+      const userId = user.uid;
+      try {
+        const docRef = firebase.firestore().collection("budget").doc(userId);
+        const docSnap = await docRef.get();
+
+        if (docSnap.exists) {
+          resolve(docSnap.data().transactions || []);
+        } else {
+          console.warn("📭 No transactions found for this user.");
+          resolve([]);
+        }
+      } catch (err) {
+        console.error("❌ Error fetching transactions:", err);
+        reject(err);
       }
     });
   });
 }
+
 
 
 document.getElementById("download-report-btn").addEventListener("click", function () {
@@ -2032,57 +2389,75 @@ document.getElementById('save-settings').addEventListener('click', () => {
 
 
 
-
-
-
 async function loadDataFromFirestore() {
   try {
-    const doc = await db.collection("budgets").doc("default").get();
+    const user = firebase.auth().currentUser;
+    if (!user) {
+      console.warn("User not logged in.");
+      return;
+    }
+
+    const uid = user.uid;
+
+    // Access the 'budget' document under this user's collection
+    const doc = await db.collection("users").doc(uid).collection("budget").doc("default").get();
+
     if (doc.exists) {
       const data = doc.data();
-      
-      // Log the entire data object to ensure you're receiving the expected structure
-      
-      // Reset arrays before pushing new data
+      console.log("✅ Data loaded from Firestore:", data);
+
+      // Clear arrays
       budgetItems.length = 0;
       transactions.length = 0;
+      accounts.length = 0;
 
-      // Push data into arrays
+      // Load arrays
       budgetItems.push(...(data.items || []));
       transactions.push(...(data.transactions || []));
+      accounts.push(...(data.accounts || []));
       budgetPool = data.pool || 0;
 
-
-      // Refresh the UI
+      // Refresh UI
       refreshBudgetItems();
-      accounts.length = 0;
-      accounts.push(...(data.accounts || []));
       refreshAccounts();
-      
+      refreshSummary && refreshSummary();
+
+      console.log("✅ Loaded accounts:", accounts);
+      console.log("✅ Budget items:", budgetItems);
+      console.log("✅ Transactions:", transactions);
+      console.log("✅ Budget Pool:", budgetPool);
     } else {
-      console.log("📭 No existing data found in Firestore.");
+      console.log("📭 No budget document found for this user.");
     }
   } catch (error) {
     console.error("❌ Failed to load data from Firestore:", error);
   }
-} // Ensure this is closed properly
+}
 
 
-// Logout button handler
+
 document.getElementById('logoutBtn').addEventListener('click', async () => {
   try {
-    const user = auth.currentUser; // use the same 'auth' instance
-    if (user) {
-      const uid = user.uid;
-      // Update sessionActive field to false
-      await db.collection('users').doc(uid).update({
+    const user = firebase.auth().currentUser;
+    if (!user) {
+      alert("No user logged in.");
+      return;
+    }
+
+    const uid = user.uid;
+    const userRef = firebase.firestore().collection('users').doc(uid);
+    const doc = await userRef.get();
+
+    if (doc.exists && doc.data().sessionActive) {
+      // Only update if it's currently active
+      await userRef.update({
         sessionActive: false
       });
     }
-    // Sign out (safe to call even if user is null)
-    await auth.signOut();
-    // Redirect to login
+
+    await firebase.auth().signOut();
     window.location.href = 'login.html';
+
   } catch (error) {
     alert("Logout failed: " + error.message);
   }
@@ -2091,9 +2466,12 @@ document.getElementById('logoutBtn').addEventListener('click', async () => {
 
 
 
+
+
   // Load Firestore data on start
   loadDataFromFirestore();
 </script>
+
 
 
 
