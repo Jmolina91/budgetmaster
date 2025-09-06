@@ -1,0 +1,2538 @@
+ <!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>BudgetMaster – YNAB-Like Monitoring</title>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+
+   <style>
+:root {
+  --bg: #f9fafb;
+  --card-bg: #ffffff;
+  --primary: #6366f1;        /* Indigo / Purple accent */
+  --primary-hover: #4f46e5;
+  --secondary: #eef2ff;      /* Light indigo background */
+  --text: #1f2937;
+  --shadow: 0 4px 12px rgba(0,0,0,0.05);
+  --radius: 12px;
+
+  --header-bg: #ffffff;
+  --header-text: #111827;
+  --sidebar-bg: #f9fafb;
+  --sidebar-text: #374151;
+  --sidebar-hover: #eef2ff;
+  --sidebar-active: #6366f1;
+  --danger: #dc2626;
+  --danger-hover: #b91c1c;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  font-family: 'Inter', sans-serif;
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  display: flex;
+  min-height: 100vh;
+  flex-direction: column;
+}
+
+/* === Sidebar === */
+.sidebar {
+  width: 220px;
+  height: 100vh;
+  background: var(--sidebar-bg);
+  border-right: 1px solid #e5e7eb;
+  padding: 20px 0;
+  position: fixed;
+  top: 0; left: 0;
+  display: flex;
+  flex-direction: column;
+}
+.sidebar h1 {
+  font-size: 20px;
+  font-weight: 700;
+  text-align: center;
+  margin-bottom: 30px;
+}
+.sidebar a {
+  padding: 12px 20px;
+  color: var(--sidebar-text);
+  text-decoration: none;
+  font-weight: 500;
+  display: block;
+  border-left: 4px solid transparent;
+  transition: 0.3s;
+}
+.sidebar a:hover {
+  background: var(--sidebar-hover);
+  border-left-color: var(--sidebar-active);
+  color: var(--sidebar-active);
+}
+.sidebar a.active {
+  background: var(--sidebar-hover);
+  border-left-color: var(--sidebar-active);
+  color: var(--sidebar-active);
+}
+
+/* === Main Content === */
+.main-content {
+  margin-left: 220px;
+  width: calc(100% - 220px);
+  padding: 20px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+
+
+/* === Actions Section === */
+.actions {
+  display: flex;
+  gap: 12px;
+  margin: 20px 0;
+}
+
+.actions button {
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius);
+  padding: 10px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  box-shadow: var(--shadow);
+  transition: background 0.25s ease, transform 0.15s ease;
+}
+
+.actions button:hover {
+  background: var(--primary-hover);
+  transform: translateY(-2px);
+}
+
+/* === Month Filter === */
+#monthFilter {
+  width: 100%;
+  padding: 10px 12px;
+  font-size: 14px;
+  border: 1px solid #e5e7eb;
+  border-radius: var(--radius);
+  background: #fff;
+  box-shadow: var(--shadow);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+#monthFilter:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.25);
+}
+
+
+
+
+
+
+
+
+
+
+
+/* === Header === */
+header {
+  background: var(--header-bg);
+  color: var(--header-text);
+  padding: 15px 20px;
+  font-weight: 600;
+  font-size: 18px;
+  border-radius: var(--radius);
+  margin-bottom: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: var(--shadow);
+}
+header button {
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius);
+  padding: 8px 14px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+header button:hover { background: var(--primary-hover); }
+
+/* === Cards === */
+.card {
+  background: var(--card-bg);
+  border-radius: var(--radius);
+  padding: 20px;
+  box-shadow: var(--shadow);
+  margin-bottom: 20px;
+}
+h2 {
+  margin: 0 0 10px;
+  font-size: 18px;
+  font-weight: 600;
+  color: #111;
+}
+h3 {
+  margin: 0 0 6px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #555;
+}
+
+/* === Summary === */
+.summary {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+.summary div {
+  flex: 1 1 180px;
+  background: var(--secondary);
+  border-radius: var(--radius);
+  padding: 16px;
+  text-align: center;
+  box-shadow: var(--shadow);
+}
+
+/* === Budget Grid === */
+/* === Budget Grid (fixed + balanced) === */
+.budget-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); /* flexible but uniform */
+  gap: 16px;
+  margin-top: 8px;
+  align-items: stretch; /* force equal height */
+}
+
+.budget-item {
+  background: var(--card-bg);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 16px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 180px;   /* 👈 ensures all cards line up evenly */
+  box-sizing: border-box;
+}
+
+.budget-item:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 14px rgba(0,0,0,0.1);
+}
+
+.item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.pill {
+  background: rgba(99, 102, 241, 0.15);
+  color: var(--primary);
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.amounts {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 10px;
+}
+.amounts strong {
+  display: block;
+  font-size: 1rem;
+  color: var(--text);
+}
+
+/* === BUDGET Section === */
+.budget-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.budget-table th, .budget-table td {
+  padding: 10px;
+  text-align: left;
+  border-bottom: 1px solid #ddd;
+}
+.budget-table tr:hover {
+  background-color: #f1f3f4;
+}
+.modal {
+  display: none;
+  position: fixed;
+  top: 0; left: 0; width: 100%; height: 100%;
+  background-color: rgba(0,0,0,0.5);
+  justify-content: center; align-items: center;
+}
+.modal-content {
+  background-color: #fff;
+  padding: 20px;
+  border-radius: 8px;
+  width: 400px;
+  max-height: 80%;
+  overflow-y: auto;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+}
+.close-btn {
+  float: right;
+  cursor: pointer;
+  font-size: 20px;
+}
+
+
+
+
+/* === Transaction History Container (YNAB Style) === */
+
+.transactions-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.transactions-table thead {
+  position: sticky;  /* 👈 header sticks on scroll */
+  top: 0;
+  z-index: 5;
+  background: var(--secondary);
+  font-weight: 600;
+  color: #374151;
+}
+
+.transactions-table th,
+.transactions-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid #e5e7eb;
+  text-align: left;
+}
+
+.transactions-table td.amount-outflow {
+  text-align: right;
+  color: var(--danger);
+  font-weight: 600;
+}
+.transactions-table td.amount-inflow {
+  text-align: right;
+  color: green;
+  font-weight: 600;
+}
+
+.transactions-table th:nth-child(4),
+.transactions-table th:nth-child(5) {
+  text-align: right;
+}
+
+
+
+.transactions-table tr:hover {
+  background: #f9fafb;
+}
+
+
+
+
+/* Optional: scrollbar styling */
+.transactions-wrapper::-webkit-scrollbar {
+  width: 8px;
+}
+.transactions-wrapper::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+.transactions-wrapper::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+
+/* ===== Accounts Section ===== */
+#accounts {
+  padding: 20px;
+}
+
+#accounts header span {
+  font-size: 1.8rem;
+  font-weight: 600;
+  color: var(--text, #111827);
+}
+
+#accounts .card {
+  background: var(--card, #fff);
+  border-radius: var(--radius, 16px);
+  padding: 24px;
+  box-shadow: var(--shadow, 0 6px 20px -8px rgba(0,0,0,0.15));
+  margin-top: 16px;
+}
+
+#accounts h2 {
+  font-size: 1.5rem;
+  margin-bottom: 16px;
+  color: var(--text, #111827);
+}
+
+#accounts-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.account-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  background: #f9fafb;
+  transition: background 0.2s ease;
+}
+
+.account-item:hover {
+  background: #f3f4f6;
+}
+
+.account-item strong {
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+#add-account-btn {
+  margin-top: 16px;
+  padding: 12px 20px;
+  border-radius: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  background: var(--primary, #2563eb);
+  color: #fff;
+  border: none;
+  transition: background 0.2s ease;
+}
+
+#add-account-btn:hover {
+  background: var(--primary-hover, #1d4ed8);
+}
+
+/* ===== Accounts Section (Oracle Style) ===== */
+#accounts .card {
+  background: #fff;
+  border-radius: 8px;
+  padding: 20px;
+  border: 1px solid #d0d0d0;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+}
+
+.accounts-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+}
+
+#accounts-list {
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.account-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 16px;
+  border-radius: 6px;
+  border: 1px solid #d6d9dc;
+  background: #fafafa;
+  transition: background 0.2s ease;
+}
+
+.account-item:hover {
+  background: #f0f1f3;
+}
+
+.account-item .sub {
+  color: #666;
+  font-size: 0.9rem;
+  margin-top: 3px;
+}
+
+.account-actions button {
+  margin-left: 6px;
+}
+
+/* ===== Buttons (Oracle Cloud Inspired) ===== */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 14px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  border-radius: 4px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-sm {
+  padding: 6px 12px;
+  font-size: 0.85rem;
+}
+
+.btn-primary {
+  background: #0066cc;
+  color: #fff;
+  border: 1px solid #005bb5;
+}
+.btn-primary:hover {
+  background: #005bb5;
+}
+
+.btn-outline {
+  background: #fff;
+  border: 1px solid #c2c6cc;
+  color: #333;
+}
+.btn-outline:hover {
+  background: #f5f6f7;
+}
+
+.btn-danger {
+  background: #d93025;
+  color: #fff;
+  border: 1px solid #b02418;
+}
+.btn-danger:hover {
+  background: #b02418;
+}
+
+/* ===== Modals (Oracle Style) ===== */
+.modal {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: rgba(0,0,0,0.35);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal.hidden {
+  display: none;
+}
+
+.modal-content {
+  background: #fff;
+  padding: 24px;
+  border-radius: 6px;
+  width: 100%;
+  max-width: 420px;
+  border: 1px solid #d6d9dc;
+  box-shadow: 0 6px 16px rgba(0,0,0,0.15);
+  animation: slideDown 0.2s ease;
+}
+
+.modal-content h2 {
+  margin-top: 0;
+  font-size: 1.3rem;
+  font-weight: 600;
+  margin-bottom: 16px;
+}
+
+.form-group {
+  margin-bottom: 16px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 6px;
+  font-weight: 500;
+  font-size: 0.9rem;
+  color: #444;
+}
+
+.form-group input,
+.form-group select {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid #c2c6cc;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  background: #fff;
+  color: #333;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+  border-color: #0066cc;
+  outline: none;
+}
+
+.modal-actions {
+  text-align: right;
+  margin-top: 18px;
+}
+
+.close {
+  float: right;
+  font-size: 20px;
+  cursor: pointer;
+  color: #777;
+}
+.close:hover {
+  color: #000;
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+
+/* === BUDGET Section === */
+.budget-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.budget-table th, .budget-table td {
+  padding: 10px;
+  text-align: left;
+  border-bottom: 1px solid #ddd;
+}
+.budget-table tr:hover {
+  background-color: #f1f3f4;
+}
+
+/* === Modal Styling === */
+.modal {
+  display: none;
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background-color: rgba(0,0,0,0.5);
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+.modal-content {
+  background-color: #fff;
+  padding: 20px;
+  border-radius: 8px;
+  width: 420px;
+  max-height: 85%;
+  overflow-y: auto;
+  box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+}
+.close-btn {
+  float: right;
+  cursor: pointer;
+  font-size: 20px;
+  font-weight: bold;
+}
+.modal-title {
+  margin: 0 0 15px 0;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+/* === Category Summary List === */
+.category-summary-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 15px 0;
+}
+.category-summary-list li {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 0;
+  border-bottom: 1px solid #eee;
+}
+.category-summary-list li span:first-child {
+  font-weight: 500;
+}
+.category-summary-list li span:last-child {
+  font-weight: bold;
+}
+.category-summary-list li.negative span:last-child {
+  color: red;
+}
+.category-summary-list li.positive span:last-child {
+  color: green;
+}
+
+/* === Footer === */
+.modal-footer {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+#category-dropdown {
+  width: 100%;
+  padding: 8px;
+}
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+.btn {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.btn.cancel {
+  background-color: #ddd;
+}
+.btn.ok {
+  background-color: #2563eb;
+  color: #fff;
+}
+
+
+
+/* Transaction Item */
+.transaction-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 12px;
+  border-bottom: 1px solid #eaeaea;
+}
+
+.tx-left {
+  flex: 1;
+  font-size: 14px;
+}
+
+.tx-date {
+  font-weight: bold;
+  color: #555;
+}
+
+.tx-type {
+  font-style: italic;
+  color: #888;
+}
+
+.tx-right {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+.tx-amount {
+  font-size: 16px;
+  font-weight: bold;
+  margin-right: 12px;
+}
+
+.tx-amount.outflow {
+  color: #e74c3c; /* Red for outflows (expenses) */
+}
+
+.tx-amount.inflow {
+  color: #27ae60; /* Green for inflows (income) */
+}
+
+.delete-tx-btn {
+  background: transparent;
+  border: none;
+  color: #e74c3c;
+  cursor: pointer;
+  font-size: 18px;
+  font-weight: bold;
+  transition: color 0.3s;
+}
+
+.delete-tx-btn:hover {
+  color: #c0392b;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+.toast {
+    background: #2563eb; /* blue */
+    color: white;
+    padding: 12px 16px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    opacity: 0;
+    transform: translateY(-10px);
+    transition: all 0.3s ease;
+    font-size: 14px;
+    min-width: 220px;
+  }
+  .toast.show {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  .toast.error {
+    background: #dc2626; /* red */
+  }
+  .toast.success {
+    background: #16a34a; /* green */
+  }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* === Goals Section === */
+#goals ul {
+  list-style: none;
+  padding: 0;
+}
+#goals li {
+  padding: 10px;
+  border-bottom: 1px solid #eee;
+}
+#goals li:last-child { border: none; }
+
+/* === Settings Form === */
+#settings form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+#settings input {
+  padding: 10px 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: var(--radius);
+}
+#settings button {
+  background: var(--primary);
+  border: none;
+  color: #fff;
+  padding: 10px;
+  border-radius: var(--radius);
+  font-weight: 600;
+  cursor: pointer;
+}
+#settings button:hover { background: var(--primary-hover); }
+
+/* === Footer === */
+footer {
+  background: var(--sidebar-bg);
+  color: var(--sidebar-text);
+  text-align: center;
+  padding: 15px;
+  border-top: 1px solid #e5e7eb;
+  font-size: 14px;
+  margin-top: auto;
+}
+footer a {
+  color: var(--sidebar-active);
+  text-decoration: none;
+  font-weight: 500;
+  margin: 0 8px;
+}
+footer a:hover { text-decoration: underline; }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* ===== Modal Overlay ===== */
+.modal {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: fixed;
+  z-index: 1000;
+  inset: 0; /* shorthand for top/left/right/bottom 0 */
+  width: 100%;
+  height: 100%;
+  background: rgba(15, 23, 42, 0.6); /* soft dark blur */
+  backdrop-filter: blur(4px);
+  transition: opacity 0.3s ease;
+}
+
+/* Hidden state */
+.hidden {
+  display: none;
+}
+
+/* ===== Modal Box ===== */
+.modal-content {
+  background: #fff;
+  padding: 24px 28px;
+  border-radius: 16px;
+  min-width: 360px;
+  max-width: 500px;
+  width: 90%;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.25);
+  animation: fadeInUp 0.35s ease;
+  position: relative;
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
+/* Modal Header */
+.modal-content h2 {
+  font-size: 20px;
+  font-weight: 600;
+  margin-bottom: 16px;
+  color: #1e293b;
+}
+
+/* Close Button */
+.close {
+  position: absolute;
+  top: 16px;
+  right: 20px;
+  font-size: 24px;
+  cursor: pointer;
+  color: #64748b;
+  transition: color 0.2s ease;
+}
+.close:hover {
+  color: #1e293b;
+}
+
+/* Form Layout */
+.modal-content label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #475569;
+}
+.modal-content input,
+.modal-content select {
+  width: 100%;
+  padding: 10px 12px;
+  margin-bottom: 14px;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  font-size: 14px;
+  transition: border 0.2s ease;
+}
+.modal-content input:focus,
+.modal-content select:focus {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
+}
+
+/* Side-by-side inputs */
+.split {
+  display: flex;
+  gap: 16px;
+}
+.split > div {
+  flex: 1;
+}
+
+/* Modal Footer Buttons */
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 10px;
+}
+
+.modal-actions button {
+  padding: 10px 18px;
+  border-radius: 10px;
+  border: none;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.25s ease, transform 0.15s ease;
+}
+
+.modal-actions button:hover {
+  transform: translateY(-1px);
+}
+
+.modal-actions button:first-child {
+  background: #f1f5f9;
+  color: #475569;
+}
+
+.modal-actions .btn-primary {
+  background: #2563eb;
+  color: white;
+  font-weight: 500;
+}
+.modal-actions .btn-primary:hover {
+  background: #1d4ed8;
+}
+
+/* Animation */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(20px) scale(0.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+
+
+</style>
+
+</head>
+<body>
+<!-- Sidebar -->
+<div class="sidebar">
+  <h1>BudgetMaster</h1>
+  <a href="#dashboard" class="active">Dashboard</a>
+  <a href="#accounts">Accounts</a>
+  <a href="#budget">Budget</a>
+  <a href="#reports">Reports</a>
+  <a href="#goals">Goals</a>
+  <a href="#settings">Settings</a>
+</div>
+
+<!-- Main Content -->
+<div class="main-content">
+  <!-- ===== Dashboard Section ===== -->
+  <section id="dashboard" class="section">
+    <header>
+      <span>Dashboard</span>
+      <div>
+        <button onclick="rollover()">Rollover</button>
+        <button onclick="logout()">Logout</button>
+      </div>
+    </header>
+
+    <!-- App Section -->
+    <div id="appSection" style="display:none;">
+      <!-- Month Filter -->
+      <div style="max-width:400px; margin:20px auto;">
+        <label for="monthFilter">Select Month:</label>
+        <select id="monthFilter" onchange="filterByMonth()"></select>
+      </div>
+
+      <!-- Summary -->
+      <div class="summary">
+        <div><h3>To Be Budgeted</h3><p id="tbb">₱0</p></div>
+        <div><h3>Total Assigned</h3><p id="assigned">₱0</p></div>
+        <div><h3>Total Spent</h3><p id="spent">₱0</p></div>
+        <div><h3>Overspent</h3><p id="overspent">₱0</p></div>
+      </div>
+
+      <!-- Actions -->
+      <div class="actions">
+        <button onclick="openModal('incomeModal')">+ Income</button>
+        <button onclick="openModal('categoryModal')">+ Category</button>
+        <button onclick="openModal('transactionModal')">+ Transaction</button>
+      </div>
+
+      <!-- Categories -->
+      <div class="card">
+        <h2>Budget Categories</h2>
+        <div id="categories" class="budget-grid"></div>
+      </div>
+
+ <div class="transactions-container">
+  <div class="transactions-wrapper">
+    <table class="transactions-table">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Payee</th>
+          <th>Category</th>
+          <th>Outflow</th>
+          <th>Inflow</th>
+        </tr>
+      </thead>
+      <tbody id="transactionsBody">
+        <!-- Transactions go here -->
+      </tbody>
+    </table>
+  </div>
+</div>
+
+  </section>
+
+
+<!-- ===== Accounts Section ===== -->
+<section id="accounts" class="section">
+  <header><span>Accounts</span></header>
+  <div class="card">
+    <div class="accounts-header">
+      <h2>Your Accounts</h2>
+      <button class="btn btn-primary" id="add-account-btn">+ Add Account</button>
+    </div>
+
+    <div id="accounts-list">
+      <!-- Account items will render here -->
+      <!-- Example:
+      <div class="account-item">
+        <div>
+          <strong>BDO Checking</strong>
+          <p class="sub">₱10,000.00</p>
+        </div>
+        <div class="account-actions">
+          <button class="btn btn-sm btn-outline" onclick="openTransactionModal(0)">+ Transaction</button>
+          <button class="btn btn-sm btn-danger" onclick="deleteAccount(0)">Delete</button>
+        </div>
+      </div>
+      -->
+    </div>
+  </div>
+</section>
+
+<!-- 🏦 Add Account Modal -->
+<div id="account-modal" class="modal hidden">
+  <div class="modal-content">
+    <span class="close" onclick="closeModal('account-modal')">&times;</span>
+    <h2 id="account-modal-title">Add Account</h2>
+
+    <div class="form-group">
+      <label for="account-name">Account Name</label>
+      <input type="text" id="account-name" placeholder="e.g. BDO Checking" />
+    </div>
+
+    <div class="form-group">
+      <label for="account-balance">Balance</label>
+      <input type="number" id="account-balance" placeholder="10000" />
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn" onclick="closeModal('account-modal')">Cancel</button>
+      <button class="btn btn-primary" id="save-account-btn">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- 💳 Add Transaction Modal -->
+<div id="transaction-modal" class="modal hidden">
+  <div class="modal-content">
+    <span class="close" onclick="closeModal('transaction-modal')">&times;</span>
+    <h2>Add Transaction</h2>
+
+    <div class="form-group">
+      <label for="transaction-type">Type</label>
+      <select id="transaction-type">
+        <option value="deposit">Deposit</option>
+        <option value="withdrawal">Withdrawal</option>
+        <option value="transfer">Transfer</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label for="transaction-amount">Amount</label>
+      <input type="number" id="transaction-amount" placeholder="1000" />
+    </div>
+
+    <div class="form-group">
+      <label for="transaction-date">Date</label>
+      <input type="date" id="transaction-date" />
+    </div>
+
+    <div class="form-group" id="transfer-target-group" style="display:none;">
+      <label for="transfer-target">Transfer To</label>
+      <select id="transfer-target"></select>
+    </div>
+
+    <div class="form-group">
+      <label for="transaction-reason">Reason / Notes</label>
+      <input type="text" id="transaction-reason" placeholder="e.g. Grocery shopping" />
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn" onclick="closeModal('transaction-modal')">Cancel</button>
+      <button class="btn btn-primary" id="save-transaction-btn">Save Transaction</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ===== Accounts Section ===== -->
+<section id="accounts" class="section">
+  <header><span>Accounts</span></header>
+  <div class="card">
+    <div class="accounts-header">
+      <h2>Your Accounts</h2>
+      <button class="btn btn-primary" id="add-account-btn">+ Add Account</button>
+    </div>
+
+    <div id="accounts-list">
+      <!-- Account items will render here -->
+    </div>
+  </div>
+</section>
+
+
+<!-- Toast Notifications -->
+<div id="toast-container" class="fixed top-4 right-4 z-50 space-y-2"></div>
+
+
+ 
+
+<!-- ===== Budget Section ===== --> 
+<section id="budget" class="section">
+  <header><span>Budget</span></header>
+  <div class="card">
+    <h2>Monthly Budget</h2>
+    <table class="budget-table">
+      <thead>
+        <tr>
+          <th></th> <!-- Checkbox column -->
+          <th>Category</th>
+          <th>Assigned Amount</th>
+          <th>Amount Spent</th>
+          <th>Remaining Balance</th>
+        </tr>
+      </thead>
+      <tbody id="budget-table-body">
+        <!-- Rows will be dynamically inserted here -->
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- Modal for Category Transactions -->
+<div id="category-modal" class="modal hidden">
+  <div class="modal-content">
+    <span class="close-btn" onclick="closeModal('category-modal')">&times;</span>
+    <h3>Edit Category</h3>
+    <label for="category-name-input">Category Name:</label>
+    <input type="text" id="category-name-input" />
+    <button id="save-category-btn">Save</button>
+    <button id="delete-category-btn" style="background-color:red;color:white;">Delete Category</button>
+
+    <h4>Transactions</h4>
+    <ul id="category-transactions-list">
+      <!-- Transactions for this category -->
+    </ul>
+  </div>
+</div> 
+
+
+
+  <!-- ===== Reports Section ===== -->
+  <section id="reports" class="section">
+    <header><span>Reports</span></header>
+    <div class="card">
+      <h2>Spending Overview</h2>
+      <p>[Charts will go here]</p>
+    </div>
+    <div class="card">
+      <h2>Income vs Expenses</h2>
+      <p>[Graph Placeholder]</p>
+    </div>
+  </section>
+
+  <!-- ===== Goals Section ===== -->
+  <section id="goals" class="section">
+    <header><span>Goals</span></header>
+    <div class="card">
+      <h2>Savings Goals</h2>
+      <ul>
+        <li>Emergency Fund – Target ₱50,000 (₱0 saved)</li>
+        <li>Vacation – Target ₱20,000 (₱0 saved)</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ===== Settings Section ===== -->
+  <section id="settings" class="section">
+    <header><span>Settings</span></header>
+    <div class="card">
+      <h2>User Settings</h2>
+      <form>
+        <label>Name</label>
+        <input type="text" placeholder="Your Name">
+
+        <label>Email</label>
+        <input type="email" placeholder="you@email.com">
+
+        <label>Password</label>
+        <input type="password">
+
+        <button type="submit">Save Settings</button>
+      </form>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer>
+    © 2025 BudgetMaster ·
+    <a href="#">Privacy</a> ·
+    <a href="#">Terms</a> ·
+    <a href="#">Contact</a>
+  </footer>
+</div>
+
+
+
+  <!-- Modals -->
+  <div id="incomeModal" class="modal hidden">
+    <div class="modal-content">
+      <span class="close" onclick="closeModal('incomeModal')">&times;</span>
+      <h2>Add Income</h2>
+      <div class="split">
+        <div><label>Date</label><input type="date" id="incomeDate"></div>
+        <div><label>Amount</label><input type="number" id="incomeAmount" step="0.01"></div>
+      </div>
+      <label>Description</label>
+      <input type="text" id="incomeDescription" placeholder="Salary, Bonus, Gift">
+      <div class="modal-actions">
+        <button onclick="closeModal('incomeModal')">Cancel</button>
+        <button class="btn-primary" onclick="addIncome(); closeModal('incomeModal')">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="categoryModal" class="modal hidden">
+    <div class="modal-content">
+      <span class="close" onclick="closeModal('categoryModal')">&times;</span>
+      <h2>Add Category</h2>
+      <div class="split">
+        <div><label>Name</label><input type="text" id="categoryName"></div>
+        <div><label>Budget</label><input type="number" id="categoryBudget"></div>
+      </div>
+      <div class="modal-actions">
+        <button onclick="closeModal('categoryModal')">Cancel</button>
+        <button class="btn-primary" onclick="addCategory(); closeModal('categoryModal')">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="transactionModal" class="modal hidden">
+    <div class="modal-content">
+      <span class="close" onclick="closeModal('transactionModal')">&times;</span>
+      <h2>Add Transaction</h2>
+      <div class="split">
+        <div><label>Payee</label><input type="text" id="transactionName"></div>
+        <div><label>Amount</label><input type="number" id="transactionAmount"></div>
+      </div>
+      <label>Category</label>
+      <select id="transactionCategory"></select>
+      <label>Date</label>
+      <input type="date" id="transactionDate">
+      <div class="modal-actions">
+        <button onclick="closeModal('transactionModal')">Cancel</button>
+        <button class="btn-primary" onclick="addTransaction(); closeModal('transactionModal')">Save</button>
+      </div>
+    </div>
+  </div>
+
+
+
+<script> 
+  // ==== Firebase Config ====
+  const firebaseConfig = {
+    apiKey: "AIzaSyA1txE-ewGSTwVrNk7gVz3z8yLeYTdwYwk",
+    authDomain: "budget-monitoringv2.firebaseapp.com",
+    projectId: "budget-monitoringv2",
+    storageBucket: "budget-monitoringv2.firebasestorage.app",
+    messagingSenderId: "539949688092",
+    appId: "1:539949688092:web:0655e0318504c6a4e946d9",
+    measurementId: "G-M8DLXRV0DW"
+  };
+  firebase.initializeApp(firebaseConfig);
+  const auth = firebase.auth();
+  const db = firebase.firestore();
+
+  let currentUser = null;
+  let accounts = []; // Will hold user accounts
+  let editingIndex = null; // Track which account is being edited
+  let transactionAccountIndex = null;
+  let selectedCategoryIndex = null; // Currently selected category for modal
+
+  document.addEventListener("DOMContentLoaded", () => {
+    const sidebarLinks = document.querySelectorAll(".sidebar a");
+    const sections = document.querySelectorAll(".section");
+
+    // Hide all sections first
+    sections.forEach(s => s.style.display = "none");
+
+    // Show Dashboard by default
+    const defaultSection = document.querySelector("#dashboard");
+    if (defaultSection) defaultSection.style.display = "block";
+
+    sidebarLinks.forEach(link => {
+      link.addEventListener("click", (e) => {
+        e.preventDefault();
+
+        // Remove active class from all links
+        sidebarLinks.forEach(l => l.classList.remove("active"));
+        link.classList.add("active");
+
+        // Hide all sections
+        sections.forEach(s => s.style.display = "none");
+
+        // Show the clicked section
+        const targetId = link.getAttribute("href").substring(1); // remove #
+        const targetSection = document.getElementById(targetId);
+        if (targetSection) targetSection.style.display = "block";
+      });
+    });
+  });
+
+
+
+
+
+
+
+
+
+
+// ==== Render Functions ====
+function renderCategories(categories) {
+  const div = document.getElementById("categories");
+  const select = document.getElementById("transactionCategory");
+  div.innerHTML = "";
+  select.innerHTML = "";
+
+  categories.forEach((c, index) => {
+    // ✅ Always compute fresh balance
+    const balance = c.assigned - c.spent;
+    const monthLabel = c.month ? `<span class="pill">${c.month}</span>` : "";
+
+    div.innerHTML += `
+      <div class="budget-item">
+        <div class="item-header">
+          <span class="font-bold">${c.name}</span>
+          ${monthLabel}
+        </div>
+        <div class="amounts">
+          <div>
+            <div class="small">Assigned</div>
+            <div>
+              <span class="assigned-value" id="assigned-${index}" onclick="editAssigned(${index}, ${c.assigned})">₱${c.assigned}</span>
+            </div>
+          </div>
+          <div>
+            <div class="small">Spent</div>
+            <div>₱${c.spent}</div>
+          </div>
+          <div>
+            <div class="small">Balance</div>
+            <div style="color:${balance < 0 ? 'red' : 'green'}">₱${balance}</div>
+          </div>
+        </div>
+      </div>
+    `;
+
+    select.innerHTML += `<option value="${c.name}">${c.name}</option>`;
+  });
+}
+
+function formatCurrency(amount, isOutflow = false) {
+  if (isNaN(amount)) return "";
+  const formatter = new Intl.NumberFormat("en-PH", {
+    style: "currency",
+    currency: "PHP",
+    minimumFractionDigits: 2,
+  });
+  return isOutflow ? "-" + formatter.format(amount) : formatter.format(amount);
+}
+
+function renderTransactions(transactions) {
+  const tbody = document.getElementById("transactionsBody");
+  tbody.innerHTML = "";
+
+  transactions
+    .sort((a, b) => new Date(b.date) - new Date(a.date)) // newest first
+    .forEach(t => {
+      let outflow = "";
+      let inflow = "";
+
+      // Support account-style inflow/outflow
+      if (typeof t.outflow === "number" && t.outflow > 0) {
+        outflow = formatCurrency(t.outflow, true);
+      }
+      if (typeof t.inflow === "number" && t.inflow > 0) {
+        inflow = formatCurrency(t.inflow, false);
+      }
+
+      // Support budget-style transactions (amount + type)
+      if (t.type === "expense") {
+        outflow = formatCurrency(t.amount, true);
+      } else if (t.type === "income") {
+        inflow = formatCurrency(t.amount, false);
+      } else if (t.type === "transfer") {
+        outflow = t.fromAccount ? formatCurrency(t.amount, true) : "";
+        inflow = t.toAccount ? formatCurrency(t.amount, false) : "";
+      }
+
+      tbody.innerHTML += `
+        <tr>
+          <td>${t.date ? t.date.slice(0, 10) : ""}</td>
+          <td>${t.name || t.payee || ""}</td>
+          <td>${t.category || ""}</td>
+          <td class="amount-outflow">${outflow}</td>
+          <td class="amount-inflow">${inflow}</td>
+        </tr>
+      `;
+    });
+}
+
+
+
+  function renderBudget(data) {
+    if (!data) return;
+    const categories = data.categories || [];
+    const transactions = data.transactions || [];
+    const tbb = data.tbb || 0;
+
+    const assigned = categories.reduce((sum, c) => sum + c.assigned, 0);
+    const spent = categories.reduce((sum, c) => sum + c.spent, 0);
+    const overspent = categories.filter(c => c.spent > c.assigned)
+                                .reduce((sum, c) => sum + (c.spent - c.assigned), 0);
+
+    document.getElementById("tbb").innerText = "₱" + tbb;
+    document.getElementById("assigned").innerText = "₱" + assigned;
+    document.getElementById("spent").innerText = "₱" + spent;
+    document.getElementById("overspent").innerText = "₱" + overspent;
+
+    renderCategories(categories);
+    renderTransactions(transactions);
+  }
+
+  // ==== Edit Assigned ====
+  async function editAssigned(index, oldValue) {
+    const span = document.getElementById(`assigned-${index}`);
+    span.outerHTML = `
+      <input type="number" id="assigned-input-${index}" value="${oldValue}" 
+        style="width:80px; border:1px solid #ccc; border-radius:4px;" 
+        onblur="saveAssigned(${index}, this.value)" 
+        onkeydown="if(event.key==='Enter'){this.blur()}">
+    `;
+    document.getElementById(`assigned-input-${index}`).focus();
+  }
+
+ async function saveAssigned(index, newValue) {
+  if (!currentUser) return;
+  const val = parseFloat(newValue);
+  if (isNaN(val) || val < 0) return alert("Enter valid number");
+
+  const docRef = db.collection("budget").doc(currentUser.uid);
+  const docSnap = await docRef.get();
+  const data = docSnap.data() || {};
+
+  // Use the selected month from filter
+  const selectedMonth = document.getElementById("monthFilter").value || data.currentMonth || new Date().toISOString().slice(0,7);
+
+  const monthDocRef = docRef.collection("months").doc(selectedMonth);
+  const monthSnap = await monthDocRef.get();
+  let monthData = monthSnap.exists
+    ? monthSnap.data()
+    : { categories: JSON.parse(JSON.stringify(data.categories || [])), transactions: [], tbb: data.tbb || 0, currentMonth: selectedMonth };
+
+  if (!monthData.categories[index]) return;
+
+  const oldValue = monthData.categories[index].assigned || 0;
+  const diff = val - oldValue;
+
+  // Update assigned & balance
+  monthData.categories[index].assigned = val;
+  monthData.categories[index].balance = val - monthData.categories[index].spent;
+
+  // Update To Be Budgeted
+  monthData.tbb -= diff;
+
+  // Save back to month document
+  await monthDocRef.set(monthData);
+
+  // Re-render the filtered month
+  renderBudget(monthData);
+}
+
+
+  // ==== Update Budget ====
+ async function updateBudget(updates) {
+  if (!currentUser) return;
+
+  const docRef = db.collection("budget").doc(currentUser.uid);
+  const docSnap = await docRef.get();
+  const data = docSnap.data() || {};
+  const currentMonth = data.currentMonth || new Date().toISOString().slice(0,7);
+
+  const monthDocRef = docRef.collection("months").doc(currentMonth);
+  const monthSnap = await monthDocRef.get();
+  let monthData = monthSnap.exists ? monthSnap.data() : { ...data, categories: [], transactions: [], currentMonth };
+
+  monthData = { ...monthData, ...updates };
+  await monthDocRef.set(monthData);
+
+  renderBudget(monthData);
+}
+
+// Load accounts automatically after login
+auth.onAuthStateChanged(async (user) => {
+  if (user) {
+    currentUser = user;
+    await loadAccounts();
+  }
+}); 
+  // ==== Auth & Load Data ====
+  auth.onAuthStateChanged(async (user) => {
+    if (!user) return window.location.href = "auth.html";
+    currentUser = user;
+
+    try {
+      const userDoc = await db.collection("users").doc(user.uid).get();
+      const userData = userDoc.data();
+      if (userDoc.exists && userData?.approved === true) {
+        document.getElementById("appSection").style.display = "block";
+        await loadBudget();
+        await loadMonthFilter();
+      } else {
+        alert("Your account is not yet approved.");
+        await auth.signOut();
+      }
+    } catch (err) {
+      console.error("Error fetching user:", err);
+    }
+  });
+
+  async function loadBudget() {
+  if (!currentUser) return;
+
+  const docRef = db.collection("budget").doc(currentUser.uid);
+  const docSnap = await docRef.get();
+  if (!docSnap.exists) {
+    await docRef.set({ tbb: 0, categories: [], transactions: [], currentMonth: new Date().toISOString().slice(0, 7) });
+  }
+
+  const data = (await docRef.get()).data();
+
+  const currentMonthKey = data.currentMonth || new Date().toISOString().slice(0, 7);
+
+  // Check if month document exists
+  const monthDocRef = docRef.collection("months").doc(currentMonthKey);
+  const monthSnap = await monthDocRef.get();
+
+  if (monthSnap.exists) {
+    renderBudget(monthSnap.data());
+  } else {
+    renderBudget(data);
+  }
+}
+
+
+ async function addIncome() {
+  const amount = parseFloat(document.getElementById("incomeAmount").value);
+  const description = document.getElementById("incomeDescription").value.trim();
+  const date = document.getElementById("incomeDate").value || new Date().toISOString().slice(0, 10);
+  const selectedMonth = document.getElementById("monthFilter").value || null;
+
+  if (isNaN(amount) || amount <= 0) return alert("Enter valid income");
+
+  const docRef = db.collection("budget").doc(currentUser.uid);
+  const docSnap = await docRef.get();
+  const data = docSnap.data();
+  const monthsRef = docRef.collection("months");
+
+  // Determine month to use
+  const targetMonth = selectedMonth || data.currentMonth || new Date().toISOString().slice(0, 7);
+
+  // Load or create month document
+  const monthDocRef = monthsRef.doc(targetMonth);
+  const monthSnap = await monthDocRef.get();
+  let monthData = monthSnap.exists
+    ? monthSnap.data()
+    : { categories: JSON.parse(JSON.stringify(data.categories || [])), transactions: [], tbb: data.tbb || 0, currentMonth: targetMonth };
+
+  // Add income transaction
+  monthData.transactions.push({
+    name: description || "Income",
+    amount,
+    category: "Income",
+    type: "income",
+    date
+  });
+
+  // Update To Be Budgeted
+  monthData.tbb = (monthData.tbb || 0) + amount;
+
+  // Save month data
+  await monthDocRef.set(monthData);
+
+  // Re-render the filtered month
+  await filterByMonth();
+
+  // Reset modal
+  document.getElementById("incomeAmount").value = "";
+  document.getElementById("incomeDescription").value = "";
+  document.getElementById("incomeDate").value = "";
+}
+
+async function addCategory() {
+  const name = document.getElementById("categoryName").value.trim();
+  const assignAmount = parseFloat(document.getElementById("categoryBudget").value);
+  const selectedMonth = document.getElementById("monthFilter").value || null;
+
+  if (!name || isNaN(assignAmount) || assignAmount < 0) return alert("Enter valid category");
+
+  const docRef = db.collection("budget").doc(currentUser.uid);
+  const docSnap = await docRef.get();
+  const data = docSnap.data();
+  const monthsRef = docRef.collection("months");
+
+  // Determine month to use
+  const targetMonth = selectedMonth || data.currentMonth || new Date().toISOString().slice(0, 7);
+
+  // Load or create month document
+  const monthDocRef = monthsRef.doc(targetMonth);
+  const monthSnap = await monthDocRef.get();
+  let monthData = monthSnap.exists
+    ? monthSnap.data()
+    : { categories: JSON.parse(JSON.stringify(data.categories || [])), transactions: [], tbb: data.tbb || 0, currentMonth: targetMonth };
+
+  // Prevent duplicates
+  if (monthData.categories.some(c => c.name.toLowerCase() === name.toLowerCase())) {
+    return alert("Category already exists. Please use a different name!");
+  }
+
+  // Add new category
+  monthData.categories.push({
+    name,
+    assigned: assignAmount,
+    spent: 0,
+    balance: assignAmount,
+    monthly: { [targetMonth]: { assigned: assignAmount, spent: 0 } }
+  });
+
+  // Deduct from To Be Budgeted
+  monthData.tbb -= assignAmount;
+
+  // Save month data
+  await monthDocRef.set(monthData);
+
+  // Re-render the filtered month
+  await filterByMonth();
+
+  // Reset form fields
+  document.getElementById("categoryName").value = "";
+  document.getElementById("categoryBudget").value = "";
+}
+
+
+async function addTransaction() { 
+  const name = document.getElementById("transactionName").value.trim();
+  const amount = parseFloat(document.getElementById("transactionAmount").value);
+  const category = document.getElementById("transactionCategory").value;
+  const selectedMonth = document.getElementById("monthFilter").value || null;
+
+  if (!name || isNaN(amount) || amount <= 0) return alert("Enter valid transaction");
+
+  const docRef = db.collection("budget").doc(currentUser.uid);
+  const docSnap = await docRef.get();
+  const data = docSnap.data();
+  const monthsRef = docRef.collection("months");
+
+  // Determine month to use (selected month or currentMonth)
+  const targetMonth = selectedMonth || data.currentMonth || new Date().toISOString().slice(0, 7);
+
+  // Load or create month-specific document
+  const monthDocRef = monthsRef.doc(targetMonth);
+  const monthSnap = await monthDocRef.get();
+  let monthData = monthSnap.exists 
+    ? monthSnap.data() 
+    : {
+        categories: JSON.parse(JSON.stringify(data.categories || [])), // deep copy
+        transactions: [],
+        tbb: data.tbb || 0,
+        currentMonth: targetMonth
+      };
+
+  // Update category spent for that month
+  const catIndex = monthData.categories.findIndex(c => c.name === category);
+  if (catIndex !== -1) {
+    monthData.categories[catIndex].spent += amount;
+    monthData.categories[catIndex].balance = monthData.categories[catIndex].assigned - monthData.categories[catIndex].spent;
+  }
+
+  // Add transaction with a unique ID
+  const transactionId = Date.now().toString(); // Use the current timestamp as the unique ID
+  monthData.transactions.push({
+    id: transactionId, // Add ID
+    name,
+    amount,
+    category,
+    type: "expense",
+    date: new Date().toISOString()
+  });
+
+  // Save month data
+  await monthDocRef.set(monthData);
+
+  // Re-render the filtered month
+  await filterByMonth();
+
+  // Reset modal
+  document.getElementById("transactionName").value = "";
+  document.getElementById("transactionAmount").value = "";
+}
+
+
+
+ async function rollover() {
+  if (!currentUser) return;
+
+  const docRef = db.collection("budget").doc(currentUser.uid);
+  const docSnap = await docRef.get();
+  if (!docSnap.exists) return;
+
+  const data = docSnap.data();
+  const baseMonthKey = data.currentMonth || new Date().toISOString().slice(0,7);
+
+  // Load current month doc
+  const currentMonthDocRef = docRef.collection("months").doc(baseMonthKey);
+  const currentMonthSnap = await currentMonthDocRef.get();
+  if (!currentMonthSnap.exists) return alert("Current month data not found!");
+
+  const currentMonthData = currentMonthSnap.data();
+  const categories = currentMonthData.categories || [];
+  let carryOverTBB = currentMonthData.tbb || 0;
+
+  // Save current month data (optional: add savedAt)
+  await currentMonthDocRef.set({ ...currentMonthData, savedAt: new Date().toISOString() });
+
+  // Prepare next month categories
+  const newCategories = categories.map(c => {
+    const balance = c.assigned - c.spent;
+    if (balance >= 0) return { name: c.name, assigned: balance, spent: 0, balance };
+    carryOverTBB += balance; // negative balance adds back to TBB
+    return { name: c.name, assigned: 0, spent: 0, balance: 0 };
+  });
+
+  // Compute next month key
+  const [year, month] = baseMonthKey.split("-").map(Number);
+  const nextMonthDate = new Date(year, month - 1, 1);
+  nextMonthDate.setMonth(nextMonthDate.getMonth() + 1);
+  const nextMonthKey = `${nextMonthDate.getFullYear()}-${String(nextMonthDate.getMonth() + 1).padStart(2, "0")}`;
+
+  // Create next month doc
+  const nextMonthDocRef = docRef.collection("months").doc(nextMonthKey);
+  await nextMonthDocRef.set({
+    categories: newCategories,
+    transactions: [],
+    tbb: carryOverTBB,
+    currentMonth: nextMonthKey
+  });
+
+  // Update main doc pointer
+  await docRef.update({ currentMonth: nextMonthKey });
+
+  // Reload month filter and render
+  await loadMonthFilter();
+  document.getElementById("monthFilter").value = ""; // reset to current month view
+  await filterByMonth();
+
+  alert(`✅ Rollover complete! Balances carried forward to ${nextMonthKey}.`);
+}
+// ✅ Load ALL months into filter (dynamic, works with rollover)
+async function loadMonthFilter() {
+  if (!currentUser) return;
+
+  const docRef = db.collection("budget").doc(currentUser.uid);
+  const docSnap = await docRef.get();
+  if (!docSnap.exists) return;
+
+  const currentMonthKey =
+    docSnap.data().currentMonth || new Date().toISOString().slice(0, 7);
+
+  const monthsRef = docRef.collection("months");
+  const snapshot = await monthsRef.get();
+
+  const monthSelect = document.getElementById("monthFilter");
+  monthSelect.innerHTML = "";
+
+  if (snapshot.empty) {
+    // fallback: just current month
+    monthSelect.innerHTML = `<option value="${currentMonthKey}">${currentMonthKey}</option>`;
+    return;
+  }
+
+  // Collect and sort all months
+  const allMonths = snapshot.docs.map(doc => doc.id).sort();
+
+  allMonths.forEach(m => {
+    const label = m === currentMonthKey ? `Current Month (${m})` : m;
+    monthSelect.innerHTML += `<option value="${m}">${label}</option>`;
+  });
+
+  // Set selected value
+  monthSelect.value = currentMonthKey;
+}
+
+// ✅ Filter by month, update dashboard + budget section
+async function filterByMonth() {
+  if (!currentUser) return;
+
+  const selectedMonth = document.getElementById("monthFilter").value;
+  const docRef = db.collection("budget").doc(currentUser.uid);
+
+  if (!selectedMonth) {
+    // fallback to default loaders
+    await loadBudget();        // dashboard summary
+    await loadBudgetSection(); // budget table
+    return;
+  }
+
+  // Update root doc so "currentMonth" stays in sync
+  await docRef.update({ currentMonth: selectedMonth });
+
+  const monthRef = docRef.collection("months").doc(selectedMonth);
+  const monthSnap = await monthRef.get();
+
+  let monthData;
+  if (monthSnap.exists) {
+    monthData = monthSnap.data();
+  } else {
+    // create empty doc if missing
+    monthData = {
+      categories: [],
+      transactions: [],
+      tbb: 0,
+      currentMonth: selectedMonth,
+    };
+    await monthRef.set(monthData);
+  }
+
+  // reset category selection
+  selectedCategoryIndex = null;
+
+  // ✅ Update BOTH sections
+  renderBudget(monthData); // dashboard summary
+  renderBudgetSection(monthData.categories, monthData.transactions); // budget table
+}
+
+
+
+////////ACCOUNT SECTION
+
+// Render accounts
+function renderAccounts(list) {
+  const div = document.getElementById("accounts-list");
+  div.innerHTML = "";
+
+  if (!list || list.length === 0) {
+    div.innerHTML = "<p>No accounts yet.</p>";
+    return;
+  }
+
+  list.forEach((acc, index) => {
+    div.innerHTML += `
+      <div class="account-item">
+        <div>
+          <strong>${acc.name}</strong>
+          <p class="sub">₱${acc.balance.toLocaleString(undefined, {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+          })}</p>
+        </div>
+        <div class="account-actions">
+          <button class="btn btn-sm btn-outline" onclick="openTransactionModal(${index})">+ Transaction</button>
+          <button class="btn btn-sm btn-danger" onclick="deleteAccount(${index})">Delete</button>
+        </div>
+      </div>
+    `;
+  });
+}
+
+// Load accounts from Firestore
+async function loadAccounts() {
+  if (!currentUser) return;
+
+  const docRef = db.collection("budget").doc(currentUser.uid);
+  const docSnap = await docRef.get();
+  const data = docSnap.exists ? docSnap.data() : null;
+
+  accounts = data?.accounts || [];
+  renderAccounts(accounts);
+}
+
+// Open modal for Add or Edit
+document.getElementById("add-account-btn").addEventListener("click", () => {
+  editingIndex = null;
+  document.getElementById("account-modal-title").innerText = "Add Account";
+  document.getElementById("account-name").value = "";
+  document.getElementById("account-balance").value = "";
+  openModal("account-modal");
+});
+
+// Save account (add or edit)
+document.getElementById("save-account-btn").addEventListener("click", async () => {
+  const name = document.getElementById("account-name").value.trim();
+  const balance = parseFloat(document.getElementById("account-balance").value);
+  if (!name) return alert("Enter an account name");
+  if (isNaN(balance)) return alert("Enter a valid balance");
+  if (!currentUser) return;
+
+  const docRef = db.collection("budget").doc(currentUser.uid);
+  const docSnap = await docRef.get();
+  let data = docSnap.exists ? docSnap.data() : { accounts: [], tbb: 0, categories: [], transactions: [], currentMonth: new Date().toISOString().slice(0,7) };
+
+  // Prevent duplicate names
+  if (editingIndex === null && data.accounts?.some(a => a.name.toLowerCase() === name.toLowerCase())) {
+    return alert("Account already exists!");
+  }
+
+  if (editingIndex !== null) {
+    // Update existing account (name + balance only)
+    data.accounts[editingIndex].name = name;
+    data.accounts[editingIndex].balance = balance;
+    // 🚫 Do NOT touch TBB
+  } else {
+    // Add new account
+    data.accounts = data.accounts || [];
+    data.accounts.push({ name, balance });
+    // 🚫 Do NOT touch TBB
+  }
+
+  await docRef.set(data);
+  accounts = data.accounts;
+  renderAccounts(accounts);
+
+  // Render budget with latest data
+  const currentMonth = data.currentMonth || new Date().toISOString().slice(0,7);
+  const monthDocRef = docRef.collection("months").doc(currentMonth);
+  const monthSnap = await monthDocRef.get();
+  const monthData = monthSnap.exists ? monthSnap.data() : { categories: data.categories || [], transactions: [], tbb: 0, currentMonth };
+
+  renderBudget(monthData);
+
+  closeModal("account-modal");
+});
+
+
+// Delete account
+async function deleteAccount(index) {
+  if (!confirm(`Delete account "${accounts[index].name}"?`)) return;
+  const docRef = db.collection("budget").doc(currentUser.uid);
+  const docSnap = await docRef.get();
+  let data = docSnap.exists ? docSnap.data() : null;
+  if (!data) return;
+
+  // 🚫 Do NOT remove balance from TBB
+  data.accounts.splice(index, 1);
+
+  await docRef.set(data);
+  accounts = data.accounts;
+  renderAccounts(accounts);
+
+  // Keep budget data intact
+  const currentMonth = data.currentMonth || new Date().toISOString().slice(0,7);
+  const monthDocRef = docRef.collection("months").doc(currentMonth);
+  const monthSnap = await monthDocRef.get();
+  const monthData = monthSnap.exists ? monthSnap.data() : { categories: data.categories || [], transactions: [], tbb: 0, currentMonth };
+
+  renderBudget(monthData);
+}
+
+
+/////// TRANSACTIONS ////////
+
+// Open Transaction Modal
+function openTransactionModal(index) {
+  transactionAccountIndex = index;
+  document.getElementById("transaction-type").value = "deposit";
+  document.getElementById("transaction-amount").value = "";
+  document.getElementById("transfer-target-group").style.display = "none";
+
+  // Populate transfer target dropdown
+  const targetSelect = document.getElementById("transfer-target");
+  targetSelect.innerHTML = "";
+  accounts.forEach((acc, i) => {
+    if (i !== index) {
+      targetSelect.innerHTML += `<option value="${i}">${acc.name}</option>`;
+    }
+  });
+
+  openModal("transaction-modal");
+}
+
+// Show/hide transfer target field
+document.getElementById("transaction-type").addEventListener("change", (e) => {
+  document.getElementById("transfer-target-group").style.display =
+    e.target.value === "transfer" ? "block" : "none";
+});
+
+document.getElementById("save-transaction-btn").addEventListener("click", async () => {
+  const type = document.getElementById("transaction-type").value;
+  const amount = parseFloat(document.getElementById("transaction-amount").value);
+  const date = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+
+  if (isNaN(amount) || amount <= 0) return alert("Enter a valid amount");
+
+  const docRef = db.collection("budget").doc(currentUser.uid);
+  const docSnap = await docRef.get();
+  let data = docSnap.exists ? docSnap.data() : null;
+  if (!data) return;
+
+  data.transactions = data.transactions || [];
+
+  let newTransaction = {
+    date,
+    name: data.accounts[transactionAccountIndex].name,
+    category: type === "deposit" ? "Deposit" : type === "withdrawal" ? "Withdrawal" : "Transfer",
+    amount,
+    type,
+    inflow: 0,
+    outflow: 0,
+    fromAccount: null,
+    toAccount: null
+  };
+
+  if (type === "deposit") {
+    data.accounts[transactionAccountIndex].balance += amount;
+    data.tbb += amount;
+    newTransaction.inflow = amount;
+
+  } else if (type === "withdrawal") {
+    if (data.accounts[transactionAccountIndex].balance < amount) return alert("Insufficient balance");
+
+    data.accounts[transactionAccountIndex].balance -= amount;
+    newTransaction.outflow = amount; // Correctly mark as outflow
+    // ✅ Do NOT add to budget inflow
+  } else if (type === "transfer") {
+    const targetIndex = parseInt(document.getElementById("transfer-target").value);
+    if (data.accounts[transactionAccountIndex].balance < amount) return alert("Insufficient balance");
+
+    data.accounts[transactionAccountIndex].balance -= amount;
+    data.accounts[targetIndex].balance += amount;
+
+    newTransaction.outflow = amount;
+    newTransaction.inflow = amount;
+    newTransaction.fromAccount = data.accounts[transactionAccountIndex].name;
+    newTransaction.toAccount = data.accounts[targetIndex].name;
+  }
+
+  data.transactions.push(newTransaction);
+  await docRef.set(data);
+
+  // Save to current month
+  const currentMonth = data.currentMonth || new Date().toISOString().slice(0, 7);
+  const monthDocRef = docRef.collection("months").doc(currentMonth);
+  const monthSnap = await monthDocRef.get();
+  let monthData = monthSnap.exists
+    ? monthSnap.data()
+    : { categories: JSON.parse(JSON.stringify(data.categories || [])), transactions: [], tbb: data.tbb, currentMonth };
+
+  monthData.transactions.push(newTransaction);
+  await monthDocRef.set(monthData);
+
+  accounts = data.accounts;
+  renderAccounts(accounts);
+  renderBudget(monthData);
+  renderTransactions(monthData.transactions);
+
+  closeModal("transaction-modal");
+});
+
+
+
+// Load accounts automatically after login
+auth.onAuthStateChanged(async (user) => {
+  if (user) {
+    currentUser = user;
+    await loadAccounts();
+  }
+});
+
+
+///// BUDGET SECTION - Google-style with Modal //////
+function renderBudgetSection(categories, transactions) {
+  const tbody = document.getElementById("budget-table-body");
+  tbody.innerHTML = ""; // Clear previous rows
+
+  categories.forEach((c, index) => {
+    const balance = c.assigned - c.spent;
+
+    const row = document.createElement("tr");
+
+    row.innerHTML = `
+      <td><input type="checkbox" class="category-checkbox" data-index="${index}" /></td>
+      <td>${c.name}</td>
+      <td>₱${c.assigned.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})}</td>
+      <td>₱${c.spent.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})}</td>
+      <td style="color:${balance<0?'red':'green'}">₱${balance.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})}</td>
+    `;
+
+    tbody.appendChild(row);
+  });
+
+  // Add checkbox click listeners
+  document.querySelectorAll(".category-checkbox").forEach(cb => {
+    cb.checked = false; // Ensure checkbox is unchecked on render
+    cb.addEventListener("change", async (e) => {
+      if (!e.target.checked) return; // Only run when checked
+
+      const idx = parseInt(e.target.dataset.index);
+      selectedCategoryIndex = idx;
+      await openCategoryModal(categories[idx], transactions);
+
+      // Uncheck after opening modal (optional, prevents modal reopening)
+      e.target.checked = false;
+    });
+  });
+}
+
+async function loadBudgetSection() {
+  if (!currentUser) return;
+
+  const docRef = db.collection("budget").doc(currentUser.uid);
+  const docSnap = await docRef.get();
+
+  // ✅ If root doc doesn't exist, initialize
+  if (!docSnap.exists) {
+    const initData = { 
+      tbb: 0, 
+      categories: [], 
+      transactions: [], 
+      currentMonth: new Date().toISOString().slice(0, 7) 
+    };
+    await docRef.set(initData);
+  }
+
+  const data = (await docRef.get()).data();
+  // ✅ Respect selected filter (like filterByMonth)
+  const selectedMonth = document.getElementById("monthFilter")?.value;
+  const targetMonth = selectedMonth || data.currentMonth || new Date().toISOString().slice(0, 7);
+
+  const monthRef = docRef.collection("months").doc(targetMonth);
+  const monthSnap = await monthRef.get();
+
+  let monthData;
+  if (monthSnap.exists) {
+    monthData = monthSnap.data();
+  } else {
+    // ✅ If month doc doesn’t exist, clone root categories
+    monthData = {
+      categories: JSON.parse(JSON.stringify(data.categories || [])),
+      transactions: [],
+      tbb: data.tbb || 0,
+      currentMonth: targetMonth,
+    };
+    await monthRef.set(monthData);
+  }
+
+  // Reset selection on reload
+  selectedCategoryIndex = null;
+
+  renderBudgetSection(monthData.categories, monthData.transactions);
+}
+
+
+
+
+
+
+
+// Format the date in a more readable format (e.g., "Sep 10, 2025")
+function formatDate(date) {
+  const options = { year: 'numeric', month: 'short', day: 'numeric' };
+  return new Date(date).toLocaleDateString('en-US', options);
+}
+
+// Open category modal and render transactions in YNAB style
+async function openCategoryModal(category, transactions) {
+  document.getElementById("category-name-input").value = category.name;
+
+  const txList = document.getElementById("category-transactions-list");
+  txList.innerHTML = ""; // Clear previous transactions
+
+  transactions
+    .filter(t => t.category === category.name)
+    .forEach((t) => {
+      const li = document.createElement("li");
+      li.className = "transaction-item";
+
+      // Determine the sign for transaction amounts (outflow = negative, inflow = positive)
+      const amountClass = t.type === "expense" ? "outflow" : "inflow";
+      const sign = t.type === "expense" ? "-" : "+";
+      const formattedAmount = `${sign}₱${Math.abs(t.amount).toLocaleString(undefined, {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      })}`;
+
+      li.innerHTML = `
+        <div class="tx-left">
+          <span class="tx-date">${formatDate(t.date)}</span>
+          <span class="tx-type">${t.type.charAt(0).toUpperCase() + t.type.slice(1)}</span> <!-- Capitalize type -->
+        </div>
+        <div class="tx-right">
+          <span class="tx-amount ${amountClass}">${formattedAmount}</span>
+          <button class="delete-tx-btn" data-id="${t.id}">✖</button>
+        </div>
+      `;
+
+      txList.appendChild(li);
+    });
+
+  // Attach delete handlers
+  document.querySelectorAll(".delete-tx-btn").forEach((btn) => {
+    btn.addEventListener("click", async (e) => {
+      const txId = e.target.dataset.id;
+      await deleteTransaction(category.name, txId);
+    });
+  });
+
+  openModal("category-modal");
+}
+
+// ✅ Delete transaction (and return amount to category)
+async function deleteTransaction(categoryName, txId) {
+  if (!confirm("Delete this transaction?")) return;
+
+  if (!currentUser) return;
+  const docRef = db.collection("budget").doc(currentUser.uid);
+  const selectedMonth = document.getElementById("monthFilter")?.value || new Date().toISOString().slice(0, 7);
+  const monthRef = docRef.collection("months").doc(selectedMonth);
+  const monthSnap = await monthRef.get();
+  if (!monthSnap.exists) return showToast("Month data not found", "error");
+
+  let monthData = monthSnap.data();
+
+  const txIndex = monthData.transactions.findIndex((t) => t.id === txId);
+  if (txIndex === -1) return;
+
+  const tx = monthData.transactions[txIndex];
+
+  // ✅ Adjust category values
+  const cat = monthData.categories.find((c) => c.name === categoryName);
+  if (cat) {
+    if (tx.type === "outflow") {
+      // return money back
+      cat.spent -= tx.amount;
+      if (cat.spent < 0) cat.spent = 0;
+    } else if (tx.type === "inflow") {
+      // rollback inflow
+      cat.assigned -= tx.amount;
+      if (cat.assigned < 0) cat.assigned = 0;
+    }
+  }
+
+  // ✅ Remove transaction
+  monthData.transactions.splice(txIndex, 1);
+
+  await monthRef.set(monthData);
+
+  // Reload UI
+  closeModal("category-modal");
+  await loadBudgetSection();
+  showToast("Transaction deleted and budget adjusted", "success");
+}
+
+// ✅ Save edited category
+document.getElementById("save-category-btn").addEventListener("click", async () => {
+  if (selectedCategoryIndex === null) return;
+
+  const newName = document.getElementById("category-name-input").value.trim();
+  if (!newName) return showToast("Enter a category name", "error");
+
+  if (!currentUser) return;
+
+  const docRef = db.collection("budget").doc(currentUser.uid);
+  const selectedMonth = document.getElementById("monthFilter")?.value || new Date().toISOString().slice(0, 7);
+
+  const monthRef = docRef.collection("months").doc(selectedMonth);
+  const monthSnap = await monthRef.get();
+  if (!monthSnap.exists) return showToast("Month data not found", "error");
+
+  let monthData = monthSnap.data();
+  if (!monthData.categories[selectedCategoryIndex]) return showToast("Category not found", "error");
+
+  const oldName = monthData.categories[selectedCategoryIndex].name;
+  monthData.categories[selectedCategoryIndex].name = newName;
+
+  // ✅ Update transactions with new name
+  monthData.transactions = monthData.transactions.map(t =>
+    t.category === oldName ? { ...t, category: newName } : t
+  );
+
+  await monthRef.set(monthData);
+
+  closeModal("category-modal");
+  await loadBudgetSection();
+
+  showToast(`Category renamed from "${oldName}" to "${newName}"`, "success");
+});
+
+// ✅ Delete category
+document.getElementById("delete-category-btn").addEventListener("click", async () => {
+  if (!confirm("Delete this category?")) return;
+
+  const docRef = db.collection("budget").doc(currentUser.uid);
+  const docSnap = await docRef.get();
+  let data = docSnap.exists ? docSnap.data() : null;
+  if (!data) return;
+
+  const currentMonth = data.currentMonth || new Date().toISOString().slice(0, 7);
+  const monthRef = docRef.collection("months").doc(currentMonth);
+  const monthSnap = await monthRef.get();
+  let monthData = monthSnap.exists ? monthSnap.data() : { categories: [], transactions: [], tbb: data.tbb };
+
+  if (selectedCategoryIndex == null || !monthData.categories[selectedCategoryIndex]) return;
+
+  const cat = monthData.categories[selectedCategoryIndex];
+  const catName = cat.name;
+
+  // ✅ Return assigned to TBB
+  monthData.tbb += (cat.assigned || 0);
+
+  // ✅ Remove category
+  monthData.categories.splice(selectedCategoryIndex, 1);
+
+  // ✅ Remove related transactions
+  monthData.transactions = monthData.transactions.filter(t => t.category !== catName);
+
+  await monthRef.set(monthData);
+
+  closeModal("category-modal");
+  await loadBudgetSection();
+
+  showToast(`Category "${catName}" deleted successfully`, "success");
+});
+
+// ✅ Delete transaction (and return amount to category)
+async function deleteTransaction(categoryName, txId) {
+  if (!confirm("Delete this transaction?")) return;
+
+  if (!currentUser) return;
+  const docRef = db.collection("budget").doc(currentUser.uid);
+  const selectedMonth = document.getElementById("monthFilter")?.value || new Date().toISOString().slice(0, 7);
+  const monthRef = docRef.collection("months").doc(selectedMonth);
+  const monthSnap = await monthRef.get();
+  if (!monthSnap.exists) return showToast("Month data not found", "error");
+
+  let monthData = monthSnap.data();
+
+  const txIndex = monthData.transactions.findIndex((t) => t.id === txId);
+  if (txIndex === -1) return alert("Transaction not found!");
+
+  const tx = monthData.transactions[txIndex];
+
+  // ✅ Adjust category values
+  const cat = monthData.categories.find((c) => c.name === categoryName);
+  if (cat) {
+    if (tx.type === "expense") {
+      // return money back
+      cat.spent -= tx.amount;
+      if (cat.spent < 0) cat.spent = 0;
+    } else if (tx.type === "income") {
+      // rollback income
+      cat.assigned -= tx.amount;
+      if (cat.assigned < 0) cat.assigned = 0;
+    }
+  }
+
+  // ✅ Remove transaction
+  monthData.transactions.splice(txIndex, 1);
+
+  await monthRef.set(monthData);
+
+  // Reload the updated data for budget, categories, and transactions
+  await loadBudgetSection(); // Make sure this function reloads all necessary data
+
+  // Re-render the updated budget and categories
+  renderBudget(monthData);
+
+  // ✅ Close the modal after deletion
+  closeModal("category-modal");  // Close the category modal (replace 'category-modal' with the actual modal ID if different)
+
+  showToast("Transaction deleted and budget adjusted", "success");
+}
+
+
+
+
+
+
+
+
+function showToast(message, type = "success") {
+  const container = document.getElementById("toast-container");
+  const toast = document.createElement("div");
+  toast.className = `toast ${type}`;
+  toast.textContent = message;
+
+  container.appendChild(toast);
+
+  // Animate in
+  setTimeout(() => toast.classList.add("show"), 50);
+
+  // Auto remove after 3s
+  setTimeout(() => {
+    toast.classList.remove("show");
+    setTimeout(() => toast.remove(), 300);
+  }, 3000);
+}
+
+// Automatically load budget section after login
+auth.onAuthStateChanged(async (user) => {
+  if (!user) return window.location.href = "auth.html";
+  currentUser = user;
+
+  await loadBudgetSection();
+});
+
+
+
+
+
+
+
+
+
+  function openModal(id) { document.getElementById(id).classList.remove("hidden"); }
+  function closeModal(id) { document.getElementById(id).classList.add("hidden"); }
+  async function logout() { if (currentUser) await auth.signOut(); }
+
+</script>
+
+
+</body>
+</html>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            
